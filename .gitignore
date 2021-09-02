@@ -1,0 +1,6 @@
+*.z64
+*.bin
+*.elf
+*.o
+
+.vscode/*
