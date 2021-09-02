@@ -1,0 +1,3 @@
+[submodule "emu/retro-go-stm32"]
+	path = emu/retro-go-stm32
+	url = git@github.com:kbeckmann/retro-go-stm32.git

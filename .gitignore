@@ -4,3 +4,7 @@
 *.o
 
 .vscode/*
+
+build
+
+loaded_*_rom.c
