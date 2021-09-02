@@ -27,6 +27,11 @@
 
 #define NVS_KEY_SAVE_SRAM "sram"
 
+// #define SHOW_FRAME_COUNTER
+
+#define blit screen_blit
+// #define blit screen_blit_v3to5
+
 #define WIDTH 320
 #define HEIGHT 240
 #define BPP      2
@@ -38,6 +43,9 @@
 // Use 60Hz for GB
 #define AUDIO_BUFFER_LENGTH_GB (AUDIO_SAMPLE_RATE / 60)
 #define AUDIO_BUFFER_LENGTH_DMA_GB ((2 * AUDIO_SAMPLE_RATE) / 60)
+
+volatile int gTicks; /* incremented every vblank */
+
 
 static odroid_video_frame_t update1 = {GB_WIDTH, GB_HEIGHT, GB_WIDTH * 2, 2, 0xFF, -1, NULL, NULL, 0, {}};
 static odroid_video_frame_t update2 = {GB_WIDTH, GB_HEIGHT, GB_WIDTH * 2, 2, 0xFF, -1, NULL, NULL, 0, {}};
@@ -80,6 +88,13 @@ void unlockVideo(display_context_t dc)
     display_show(dc);
 }
 
+void printText(display_context_t dc, char *msg, int x, int y)
+{
+    if (dc)
+        graphics_draw_text(dc, x*8, y*8, msg);
+}
+
+
 /**
  * @brief Grab the texture buffer given a display context
  *
@@ -95,11 +110,11 @@ __attribute__((optimize("unroll-loops")))
 __attribute__((section (".itcram_hot_text")))
 static inline void screen_blit_v3to5(void) {
     // static uint32_t lastFPSTime = 0;
-    // static uint32_t frames = 0;
+    static uint32_t frames = 0;
     // uint32_t currentTime = HAL_GetTick();
     // uint32_t delta = currentTime - lastFPSTime;
 
-    // frames++;
+    frames++;
 
     // if (delta >= 1000) {
     //     int fps = (10000 * frames) / delta;
@@ -145,6 +160,18 @@ static inline void screen_blit_v3to5(void) {
         }
     }
 
+#ifdef SHOW_FRAME_COUNTER
+    int color = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
+    graphics_set_color(color, 0);
+    char temp[32];
+    sprintf(temp, "gTicks: %d", gTicks);
+    printText(_dc, temp, 0, 7);
+
+    sprintf(temp, "frames: %d", frames);
+    printText(_dc, temp, 0, 9);
+#endif
+
+
     // PROFILING_END(t_blit);
 
 #ifdef PROFILING_ENABLED
@@ -155,13 +182,15 @@ static inline void screen_blit_v3to5(void) {
 
 
 __attribute__((optimize("unroll-loops")))
-static inline void screen_blit(void) {
+static inline void screen_blit(void)
+{
+  static int frames;
     // static uint32_t lastFPSTime = 0;
     // static uint32_t frames = 0;
     // uint32_t currentTime = HAL_GetTick();
     // uint32_t delta = currentTime - lastFPSTime;
 
-    // frames++;
+    frames++;
 
     // if (delta >= 1000) {
     //     int fps = (10000 * frames) / delta;
@@ -173,13 +202,12 @@ static inline void screen_blit(void) {
 
     int w1 = currentUpdate->width;
     int h1 = currentUpdate->height;
-    int w2 = 266;
-    int h2 = 240;
+    int w2 = GB_WIDTH;
+    int h2 = GB_HEIGHT;
 
     int x_ratio = (int)((w1<<16)/w2) +1;
     int y_ratio = (int)((h1<<16)/h2) +1;
-    int hpad = 27;
-    int x2, y2 ;
+    int hpad = 0;
 
     uint16_t* screen_buf = (uint16_t*)currentUpdate->buffer;
     display_context_t _dc = lockVideo(1);
@@ -188,14 +216,27 @@ static inline void screen_blit(void) {
     // PROFILING_INIT(t_blit);
     // PROFILING_START(t_blit);
 
-    for (int i=0;i<h2;i++) {
-        for (int j=0;j<w2;j++) {
-            x2 = ((j*x_ratio)>>16) ;
-            y2 = ((i*y_ratio)>>16) ;
-            uint16_t b2 = screen_buf[(y2*w1)+x2];
-            dest[(i*WIDTH)+j+hpad] = b2;
-        }
+    for (int y = 0; y < h2; y++) {
+      memcpy(&dest[(y * WIDTH) + hpad], &screen_buf[y * GB_WIDTH], GB_WIDTH * 2);
+        // for (int j=0;j<w2;j++) {
+        //     x2 = ((j*x_ratio)>>16) ;
+        //     y2 = ((i*y_ratio)>>16) ;
+        //     uint16_t b2 = screen_buf[(y2*w1)+x2];
+        //     dest[(i*WIDTH)+j+hpad] = b2;
+        // }
     }
+
+#ifdef SHOW_FRAME_COUNTER
+    int color = graphics_make_color(0x00, 0x00, 0x00, 0xFF);
+    graphics_set_color(color, 0);
+    char temp[32];
+    sprintf(temp, "gTicks: %d", gTicks);
+    printText(_dc, temp, 0, 7);
+
+    sprintf(temp, "frames: %d", frames);
+    printText(_dc, temp, 0, 9);
+#endif
+
 
     // PROFILING_END(t_blit);
 
@@ -230,8 +271,6 @@ void pcm_submit(void)
 {
 
 }
-
-volatile int gTicks; /* incremented every vblank */
 
 /* vblank callback */
 void vblCallback(void) {
@@ -283,13 +322,12 @@ void init(void)
     fb.pitch = update1.stride;
     fb.ptr = currentUpdate->buffer;
     fb.enabled = 1;
-    // fb.blit_func = &screen_blit;
-    fb.blit_func = &screen_blit_v3to5;
+    fb.blit_func = &blit;
 
     emu_init();
 
     //pal_set_dmg(odroid_settings_Palette_get());
-    pal_set_dmg(2);
+    pal_set_dmg(1);
 }
 
 

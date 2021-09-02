@@ -21,7 +21,7 @@ C_INCLUDES =  \
 -I./retro-go-stm32/components/odroid \
 -I./retro-go-stm32/components/lupng
 
-OPT = -O2
+OPT = -Ofast
 WERROR = 
 #WERROR = -Werror
 
