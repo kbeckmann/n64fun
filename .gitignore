@@ -5,6 +5,6 @@
 
 .vscode/*
 
-build
+build*/
 
 loaded_*_rom.c
