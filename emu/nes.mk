@@ -1,5 +1,5 @@
 PROG_NAME = emu
-BUILD_DIR = build
+BUILD_DIR = build_nes
 
 ROOTDIR = $(N64_INST)
 GCCN64PREFIX = $(ROOTDIR)/bin/mips64-elf-
@@ -11,8 +11,7 @@ OBJCOPY = $(GCCN64PREFIX)objcopy
 N64TOOL = $(ROOTDIR)/bin/n64tool
 CHKSUM64 = $(ROOTDIR)/bin/chksum64
 
-C_DEFS =  \
--DIS_LITTLE_ENDIAN
+C_DEFS = 
 
 C_INCLUDES =  \
 -I$(ROOTDIR)/mips64-elf/include \
@@ -28,7 +27,7 @@ WERROR =
 #WERROR = -Werror
 
 ASFLAGS = -mtune=vr4300 -march=vr4300
-CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) $(OPT) $(C_INCLUDES)
+CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) $(OPT) $(C_DEFS) $(C_INCLUDES)
 LDFLAGS = -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
 N64TOOLFLAGS = -l 1M -h $(ROOTDIR)/mips64-elf/lib/header -t "Emulator Test"
 
@@ -130,5 +129,5 @@ $(BUILD_DIR):
 
 
 clean:
-	rm -rf build
+	rm -rf $(BUILD_DIR)
 .PHONY: clean
