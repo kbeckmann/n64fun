@@ -125,6 +125,7 @@ int main(void)
     init_n64();
 
     int frames = 0;
+    int vi_line = 0x200; // default from libdragon
     while (1) {
         int j;
         int width[6]  = { 320, 640, 256, 512, 512, 640 };
@@ -188,6 +189,9 @@ int main(void)
         sprintf(temp, "frames: %d", frames);
         printText(_dc, temp, width[res]/16 - 3, 9);
 
+        sprintf(temp, "VI_interrupt(1, %d)", vi_line);
+        printText(_dc, temp, width[res]/16 - 10, 11);
+
         for (j = 0; j < 8; j++){
             sprintf(temp, "Line %d", j);
             printText(_dc, temp, 3, j);
@@ -216,12 +220,23 @@ int main(void)
                 res %= 6;
                 display_close();
                 display_init(mode[res], DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE);
+                set_VI_interrupt(1, vi_line);
             }
         }
 
         if (B_BUTTON(buttons)) {
             gTicks = 0;
             frames = 0;
+        }
+
+        if (DU_BUTTON(buttons)) {
+            vi_line++;
+            set_VI_interrupt(1, vi_line);
+        }
+
+        if (DD_BUTTON(buttons)) {
+            vi_line--;
+            set_VI_interrupt(1, vi_line);
         }
 
         previous = buttons;
