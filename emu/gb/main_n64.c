@@ -27,8 +27,8 @@
 
 #define NVS_KEY_SAVE_SRAM "sram"
 
-#define WIDTH  GB_WIDTH
-#define HEIGHT GB_HEIGHT
+#define WIDTH 320
+#define HEIGHT 240
 #define BPP      2
 #define SCALE    4
 
@@ -91,38 +91,123 @@ void unlockVideo(display_context_t dc)
 #define __get_buffer( x ) __safe_buffer[(x)-1]
 extern void *__safe_buffer[3];
 
-
 __attribute__((optimize("unroll-loops")))
-static inline void blit(void) {
-    const int w1 = GB_WIDTH;
-    const int w2 = 320;
-    const int h1 = GB_HEIGHT;
-    const int hpad = 27;
-    int index = 0;
+__attribute__((section (".itcram_hot_text")))
+static inline void screen_blit_v3to5(void) {
+    // static uint32_t lastFPSTime = 0;
+    // static uint32_t frames = 0;
+    // uint32_t currentTime = HAL_GetTick();
+    // uint32_t delta = currentTime - lastFPSTime;
+
+    // frames++;
+
+    // if (delta >= 1000) {
+    //     int fps = (10000 * frames) / delta;
+    //     printf("FPS: %d.%d, frames %ld, delta %ld ms, skipped %d\n", fps / 10, fps % 10, delta, frames, common_emu_state.skipped_frames);
+    //     frames = 0;
+    //     common_emu_state.skipped_frames = 0;
+    //     lastFPSTime = currentTime;
+    // }
 
     display_context_t _dc = lockVideo(1);
-    uint16_t *n64_fb = (uint16_t *) __get_buffer(_dc);
+    uint16_t *dest = (uint16_t *) __get_buffer(_dc);
 
-    for (int y = 0; y < h1; y++) {
-        uint16_t *dest_row = &n64_fb[y * w2 + hpad];
-        for (int x = 0; x < w1; x++) {
-            uint16_t c = 
-              ((fb_data[index] & 0b1111111111000000) | 1) | // Reuse R and G, set alpha = 1
-              ((fb_data[index] << 1) & 0b111110);           // Shift and mask out B
+    // PROFILING_INIT(t_blit);
+    // PROFILING_START(t_blit);
 
-            dest_row[x] = c;
+#define CONV(_b0)    (((0b11111000000000000000000000&_b0)>>10) | ((0b000001111110000000000&_b0)>>5) | ((0b0000000000011111&_b0)))
+#define EXPAND(_b0)  (((0b1111100000000000 & _b0) << 10) | ((0b0000011111100000 & _b0) << 5) | ((0b0000000000011111 & _b0)))
 
-            index++;
+    int y_src = 0;
+    int y_dst = 0;
+    int w = currentUpdate->width;
+    int h = currentUpdate->height;
+    for (; y_src < h; y_src += 3, y_dst += 5) {
+        int x_src = 0;
+        int x_dst = 0;
+        for (; x_src < w; x_src += 1, x_dst += 2) {
+            uint16_t *src_col = &((uint16_t *)currentUpdate->buffer)[(y_src * w) + x_src];
+            uint32_t b0 = EXPAND(src_col[w * 0]);
+            uint32_t b1 = EXPAND(src_col[w * 1]);
+            uint32_t b2 = EXPAND(src_col[w * 2]);
+
+            dest[((y_dst + 0) * WIDTH) + x_dst] = CONV(b0) | 1;
+            dest[((y_dst + 1) * WIDTH) + x_dst] = CONV((b0+b1)>>1) | 1;
+            dest[((y_dst + 2) * WIDTH) + x_dst] = CONV(b1) | 1;
+            dest[((y_dst + 3) * WIDTH) + x_dst] = CONV((b1+b2)>>1) | 1;
+            dest[((y_dst + 4) * WIDTH) + x_dst] = CONV(b2) | 1;
+
+            dest[((y_dst + 0) * WIDTH) + x_dst + 1] = CONV(b0) | 1;
+            dest[((y_dst + 1) * WIDTH) + x_dst + 1] = CONV((b0+b1)>>1) | 1;
+            dest[((y_dst + 2) * WIDTH) + x_dst + 1] = CONV(b1) | 1;
+            dest[((y_dst + 3) * WIDTH) + x_dst + 1] = CONV((b1+b2)>>1) | 1;
+            dest[((y_dst + 4) * WIDTH) + x_dst + 1] = CONV(b2) | 1;
         }
     }
+
+    // PROFILING_END(t_blit);
+
+#ifdef PROFILING_ENABLED
+    // printf("Blit: %d us\n", (1000000 * PROFILING_DIFF(t_blit)) / t_blit_t0.SecondFraction);
+#endif
+    unlockVideo(_dc);
+}
+
+
+__attribute__((optimize("unroll-loops")))
+static inline void screen_blit(void) {
+    // static uint32_t lastFPSTime = 0;
+    // static uint32_t frames = 0;
+    // uint32_t currentTime = HAL_GetTick();
+    // uint32_t delta = currentTime - lastFPSTime;
+
+    // frames++;
+
+    // if (delta >= 1000) {
+    //     int fps = (10000 * frames) / delta;
+    //     printf("FPS: %d.%d, frames %ld, delta %ld ms, skipped %d\n", fps / 10, fps % 10, delta, frames, common_emu_state.skipped_frames);
+    //     frames = 0;
+    //     common_emu_state.skipped_frames = 0;
+    //     lastFPSTime = currentTime;
+    // }
+
+    int w1 = currentUpdate->width;
+    int h1 = currentUpdate->height;
+    int w2 = 266;
+    int h2 = 240;
+
+    int x_ratio = (int)((w1<<16)/w2) +1;
+    int y_ratio = (int)((h1<<16)/h2) +1;
+    int hpad = 27;
+    int x2, y2 ;
+
+    uint16_t* screen_buf = (uint16_t*)currentUpdate->buffer;
+    display_context_t _dc = lockVideo(1);
+    uint16_t *dest = (uint16_t *) __get_buffer(_dc);
+
+    // PROFILING_INIT(t_blit);
+    // PROFILING_START(t_blit);
+
+    for (int i=0;i<h2;i++) {
+        for (int j=0;j<w2;j++) {
+            x2 = ((j*x_ratio)>>16) ;
+            y2 = ((i*y_ratio)>>16) ;
+            uint16_t b2 = screen_buf[(y2*w1)+x2];
+            dest[(i*WIDTH)+j+hpad] = b2;
+        }
+    }
+
+    // PROFILING_END(t_blit);
+
+#ifdef PROFILING_ENABLED
+    // printf("Blit: %d us\n", (1000000 * PROFILING_DIFF(t_blit)) / t_blit_t0.SecondFraction);
+#endif
 
     unlockVideo(_dc);
 }
 
 int init_window(int width, int height)
 {
-  
-
     return 0;
 }
 
@@ -198,12 +283,12 @@ void init(void)
     fb.pitch = update1.stride;
     fb.ptr = currentUpdate->buffer;
     fb.enabled = 1;
-    fb.blit_func = &blit;
+    // fb.blit_func = &screen_blit;
+    fb.blit_func = &screen_blit_v3to5;
 
     emu_init();
 
     //pal_set_dmg(odroid_settings_Palette_get());
-    // pal_set_dmg(2);
     pal_set_dmg(2);
 }
 
