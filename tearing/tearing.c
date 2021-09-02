@@ -192,6 +192,9 @@ int main(void)
         sprintf(temp, "VI_interrupt(1, %d)", vi_line);
         printText(_dc, temp, width[res]/16 - 10, 11);
 
+        sprintf(temp, "get_tv_type(): %d", get_tv_type());
+        printText(_dc, temp, width[res]/16 - 10, 13);
+
         for (j = 0; j < 8; j++){
             sprintf(temp, "Line %d", j);
             printText(_dc, temp, 3, j);
