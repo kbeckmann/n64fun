@@ -146,10 +146,11 @@ void render(const std::vector<Sphere> &spheres, const std::vector<Light> &lights
             if (max>1) c = c*(1./max);
 
             uint8_t r = (uint8_t) (c[0] * 31.0f);
-            uint8_t g = (uint8_t) (c[1] * 63.0f);
+            uint8_t g = (uint8_t) (c[1] * 31.0f);
             uint8_t b = (uint8_t) (c[2] * 31.0f);
 
-            uint16_t col = (b) | (g << 5) | (r << 11);
+            // rgba 5551
+            uint16_t col = (r << 11) | (g << 6) | (b<<1) | 1;
 
             for (int xx = 0; xx < scale; xx++) {
                 for (int yy = 0; yy < scale; yy++) {
