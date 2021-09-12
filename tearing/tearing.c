@@ -150,6 +150,24 @@ int main(void)
         }
         graphics_fill_screen(_dc, color);
 
+        // Create R G B boxes
+        graphics_draw_box(_dc, 
+            100, 0,
+             10, 10,
+            graphics_make_color(0xFF, 0x00, 0x00, 0xFF));
+
+        graphics_draw_box(_dc, 
+            110, 0,
+             10, 10,
+            graphics_make_color(0x00, 0xFF, 0x00, 0xFF));
+
+        graphics_draw_box(_dc, 
+            120, 0,
+             10, 10,
+            graphics_make_color(0x00, 0x00, 0xFF, 0xFF));
+
+
+
         color = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF);
 
         // Slide a vertical bar across the screen
