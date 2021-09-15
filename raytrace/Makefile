@@ -40,7 +40,7 @@ $(PROG_NAME).bin: $(PROG_NAME).elf
 	$(OBJCOPY) $< $@ -O binary
 
 %.o : %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
+	$(CXX) -c $(CXXFLAGS) -fverbose-asm  -Wa,-a,-ad,-alms=$(notdir $(<:.cpp=.lst)) $< -o $@
 
 $(PROG_NAME).elf: $(PROG_NAME).o tinyraytracer.o
 	$(CXX) -o $@ $^ $(LDFLAGS)
