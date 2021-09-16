@@ -31,6 +31,8 @@ void scene1(display_context_t disp, uint32_t t[8])
         plane = malloc(dfs_size(fp));
         dfs_read(plane, 1, dfs_size(fp), fp);
         dfs_close(fp);
+
+        fprintf(stderr, "Initialized!\n");
     }
 
     /* Assure RDP is ready for new commands */

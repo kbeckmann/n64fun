@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <libdragon.h>
+#include <cop1.h>
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -35,9 +36,9 @@ static void vblCallback(void)
 }
 
 scene_t *scenes[] = {
-    &scene0,
-    &scene1,
     &scene2,
+    &scene1,
+    &scene0,
 };
 
 int main(void)
@@ -53,6 +54,7 @@ int main(void)
 
     /* enable interrupts (on the CPU) */
     init_interrupts();
+    debug_init_isviewer();
 
     /* Initialize peripherals */
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_OFF);

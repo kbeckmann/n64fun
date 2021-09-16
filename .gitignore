@@ -2,8 +2,11 @@
 *.bin
 *.elf
 *.o
+*.lst
+*.dfs
 
 .vscode/*
+*/history
 
 build*/
 
