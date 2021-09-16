@@ -18,6 +18,10 @@ CFLAGS = -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) -I$(ROOTDIR)/mip
 LDFLAGS = -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
 N64TOOLFLAGS = -l 2M -h $(ROOTDIR)/mips64-elf/lib/header -t "Video Res Test"
 
+
+C_SOURCES = $(wildcard *.c)
+OBJECTS = $(C_SOURCES:.c=.o)
+
 ifeq ($(N64_BYTE_SWAP),true)
 $(PROG_NAME).v64: $(PROG_NAME).z64
 	dd conv=swab if=$^ of=$@
@@ -30,7 +34,7 @@ $(PROG_NAME).z64: $(PROG_NAME).bin $(PROG_NAME).dfs
 $(PROG_NAME).bin: $(PROG_NAME).elf
 	$(OBJCOPY) $< $@ -O binary
 
-$(PROG_NAME).elf: $(PROG_NAME).o
+$(PROG_NAME).elf: $(OBJECTS)
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 $(PROG_NAME).dfs: $(wildcard ./filesystem/*)
