@@ -20,6 +20,7 @@ extern void *__safe_buffer[3];
 void scene0(display_context_t disp, uint32_t t[8]);
 void scene1(display_context_t disp, uint32_t t[8]);
 void scene2(display_context_t disp, uint32_t t[8]);
+void scene3(display_context_t disp, uint32_t t[8]);
 
 
 volatile uint32_t animcounter = 0;
@@ -36,6 +37,7 @@ static void vblCallback(void)
 }
 
 scene_t *scenes[] = {
+    &scene3,
     &scene2,
     &scene1,
     &scene0,
@@ -50,14 +52,18 @@ int main(void)
     uint32_t t_delta, t_delta_ms;
     uint32_t scene = 0;
     uint32_t cycle = 0;
-    uint32_t print_stats = 1;
+    uint32_t print_stats = 0;
+
+    resolution_t resolution = RESOLUTION_640x240;
+    bitdepth_t bitdepth = DEPTH_16_BPP;
+    antialias_t antialias = ANTIALIAS_OFF;
 
     /* enable interrupts (on the CPU) */
     init_interrupts();
     debug_init_isviewer();
 
     /* Initialize peripherals */
-    display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, ANTIALIAS_OFF);
+    display_init(resolution, bitdepth, 2, GAMMA_NONE, antialias);
     set_VI_interrupt(1, 590);
 
     dfs_init(DFS_DEFAULT_LOCATION);
@@ -137,6 +143,12 @@ int main(void)
             }
             if (keys.c[0].Z) {
                 print_stats = !print_stats;
+            }
+            if (keys.c[0].up) {
+                resolution = (resolution + 1) % (RESOLUTION_640x240 + 1);
+                display_close();
+                display_init(resolution, bitdepth, 2, GAMMA_NONE, antialias);
+                set_VI_interrupt(1, 590);
             }
         }
 
