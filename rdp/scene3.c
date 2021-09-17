@@ -166,6 +166,7 @@ void scene3(display_context_t disp, uint32_t t[8])
                                              points_x[i - 1], points_y[i - 1],
                                              points_x[    i], points_y[    i]);
                 }
+                rdp_sync(SYNC_PIPE);
             }
         }
     }
@@ -176,5 +177,5 @@ void scene3(display_context_t disp, uint32_t t[8])
 
     rdp_detach_display();
 
-    t[4] = t[5] = t[6] = TICKS_READ();
+    t[4] = t[5] = t[6] = t[7] = TICKS_READ();
 }
