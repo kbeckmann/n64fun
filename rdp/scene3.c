@@ -54,7 +54,6 @@ void scene3(display_context_t disp, uint32_t t[8])
     static int initialized;
     static uint8_t *scene_data_start;
     static uint8_t *scene_data;
-    static uint32_t scene_len;
     static uint32_t colorArray[16];
     static uint16_t vertArray[256];
 
@@ -74,8 +73,7 @@ void scene3(display_context_t disp, uint32_t t[8])
         scene_data_start = malloc(dfs_size(fp) + 0x10000);
         scene_data_start = (uint8_t *) (((uint32_t) scene_data_start + 0x10000) & ~0xffff); // Align with 64kB
         scene_data = scene_data_start;
-        scene_len = dfs_size(fp);
-        dfs_read(scene_data, 1, scene_len, fp);
+        dfs_read(scene_data, 1, dfs_size(fp), fp);
         dfs_close(fp);
     }
 
@@ -136,16 +134,19 @@ void scene3(display_context_t disp, uint32_t t[8])
 
     // hi-nibble - 4 bits color-index
     // lo-nibble - 4 bits number of polygon vertices
-    for (;;) {
+    int done = 0;
+    while (!done) {
         uint8_t bits = read_u8(&scene_data);
         switch (bits) {
             case 0xFE: // End of frame and the stream skips to the next 64KB block
                 scene_data = (uint8_t *) ((((uint32_t) scene_data) + 0x10000) & ~0xFFFF);
             case 0xFF: // End of frame
-                goto done;
+                done = 1;
+                break;
             case 0xFD: // End of stream
                 scene_data = scene_data_start;
-                goto done;
+                done = 1;
+                break;
             default:
             {
                 float points_x[16];
@@ -174,8 +175,6 @@ void scene3(display_context_t disp, uint32_t t[8])
             }
         }
     }
-
-    done:
 
     t[3] = TICKS_READ();
 
