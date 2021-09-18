@@ -1,11 +1,6 @@
 // Modified version of examples/spritemap/spritemap.c
 
-#include <stdio.h>
-#include <malloc.h>
-#include <string.h>
-#include <stdint.h>
-#include <libdragon.h>
-#include <cop1.h>
+#include "common.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -13,17 +8,8 @@
 // t[8]: Profiling timestamps
 typedef void (scene_t)(display_context_t disp, uint32_t t[8]);
 
-// Unfortunately needed to access the raw frame buffer form libdragon
-#define __get_buffer(x) __safe_buffer[(x) - 1]
-extern void *__safe_buffer[3];
 
-void scene0(display_context_t disp, uint32_t t[8]);
-void scene1(display_context_t disp, uint32_t t[8]);
-void scene2(display_context_t disp, uint32_t t[8]);
-void scene3(display_context_t disp, uint32_t t[8]);
-
-
-volatile uint32_t animcounter = 0;
+uint32_t g_frame = 0;
 
 static void printText(display_context_t dc, char *msg, int x, int y)
 {
@@ -33,14 +19,16 @@ static void printText(display_context_t dc, char *msg, int x, int y)
 
 static void vblCallback(void)
 {
-    animcounter++;
+    g_frame++;
 }
 
 scene_t *scenes[] = {
-    &scene3,
-    &scene2,
-    &scene1,
     &scene0,
+    &scene1,
+    &scene2,
+    &scene3,
+    &scene4,
+    &scene5,
 };
 
 int main(void)
@@ -54,8 +42,10 @@ int main(void)
     uint32_t cycle = 0;
     uint32_t print_stats = 0;
 
-    resolution_t resolution = RESOLUTION_640x240;
+    // resolution_t resolution = RESOLUTION_640x240;
+    resolution_t resolution = RESOLUTION_512x240;
     bitdepth_t bitdepth = DEPTH_16_BPP;
+    // bitdepth_t bitdepth = DEPTH_32_BPP;
     antialias_t antialias = ANTIALIAS_OFF;
 
     /* enable interrupts (on the CPU) */
@@ -92,7 +82,7 @@ int main(void)
         scenes[scene](disp, t);
 
         // Cycle through the scenes automatically
-        if (cycle && (animcounter % 100 == 0)) {
+        if (cycle && (g_frame % 100 == 0)) {
             scene = (scene + 1) % ARRAY_SIZE(scenes);
         }
 
@@ -121,6 +111,9 @@ int main(void)
                 sprintf(temp, "t%d-t%d=%ld (%ld ms)", i + 1, i, t_delta, t_delta_ms);
                 printText(disp, temp, 15, 11 + 2*i);
             }
+
+            sprintf(temp, "%ld x %ld x %ld x AA=%ld", __width, __height, __bitdepth, antialias);
+            printText(disp, temp, 15, 25);
         }
 
         /* Force backbuffer flip */
@@ -146,6 +139,12 @@ int main(void)
             }
             if (keys.c[0].up) {
                 resolution = (resolution + 1) % (RESOLUTION_640x240 + 1);
+                display_close();
+                display_init(resolution, bitdepth, 2, GAMMA_NONE, antialias);
+                set_VI_interrupt(1, 590);
+            }
+            if (keys.c[0].right) {
+                antialias = (antialias + 1) % (ANTIALIAS_RESAMPLE_FETCH_ALWAYS + 1);
                 display_close();
                 display_init(resolution, bitdepth, 2, GAMMA_NONE, antialias);
                 set_VI_interrupt(1, 590);

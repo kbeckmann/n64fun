@@ -1,10 +1,4 @@
-#include <stdio.h>
-#include <malloc.h>
-#include <string.h>
-#include <stdint.h>
-#include <libdragon.h>
-
-extern volatile uint32_t animcounter;
+#include "common.h"
 
 void scene1(display_context_t disp, uint32_t t[8])
 {
@@ -54,7 +48,7 @@ void scene1(display_context_t disp, uint32_t t[8])
     rdp_draw_filled_rectangle(0, 0, 320, 240);
 
     rdp_set_primitive_color(graphics_make_color(0xFF, 0x00, 0xFF, 0xFF));
-    rdp_draw_filled_rectangle(animcounter % (320-50), 0, (animcounter % (320-50)) + 50, 240);
+    rdp_draw_filled_rectangle(g_frame % (320-50), 0, (g_frame % (320-50)) + 50, 240);
 
     t[3] = TICKS_READ();
 
@@ -87,7 +81,7 @@ void scene1(display_context_t disp, uint32_t t[8])
     rdp_sync(SYNC_PIPE);
 
     /* Load the sprite into texture slot 0, at the beginning of memory, without mirroring */
-    rdp_load_texture_stride(0, 0, MIRROR_DISABLED, earthbound, ((animcounter / 15) & 1) ? 1: 0);
+    rdp_load_texture_stride(0, 0, MIRROR_DISABLED, earthbound, ((g_frame / 15) & 1) ? 1: 0);
 
     /* Display walking NESS animation */
     rdp_draw_sprite(0, 20, 100, MIRROR_DISABLED);
@@ -96,7 +90,7 @@ void scene1(display_context_t disp, uint32_t t[8])
     rdp_sync(SYNC_PIPE);
 
     /* Load the sprite into texture slot 0, at the beginning of memory, without mirroring */
-    rdp_load_texture_stride(0, 0, MIRROR_DISABLED, earthbound, ((animcounter / 8) & 0x7) * 2);
+    rdp_load_texture_stride(0, 0, MIRROR_DISABLED, earthbound, ((g_frame / 8) & 0x7) * 2);
 
     /* Display rotating NESS animation */
     rdp_draw_sprite(0, 50, 100, MIRROR_DISABLED);

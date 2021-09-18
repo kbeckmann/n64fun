@@ -1,11 +1,4 @@
-#include <stdio.h>
-#include <malloc.h>
-#include <string.h>
-#include <stdint.h>
-#include <libdragon.h>
-#include <math.h>
-
-extern volatile uint32_t animcounter;
+#include "common.h"
 
 void scene2(display_context_t disp, uint32_t t[8])
 {
@@ -28,7 +21,7 @@ void scene2(display_context_t disp, uint32_t t[8])
 
     t[2] = TICKS_READ();
 
-    float theta = ((float) animcounter) / 100;
+    float theta = ((float) g_frame) / 100;
 
     /* Right-angled triangle
     *
