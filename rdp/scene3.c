@@ -159,6 +159,8 @@ void scene3(display_context_t disp, uint32_t t[8])
                     points_y[ii] = (point_xy & 0xff) * sy;
                 }
 
+                // A SYNC_PIPE has to be issued if the attributes change and are
+                // used by the last two primitives.
                 if (color != last_color) {
                     rdp_sync(SYNC_PIPE);
                     rdp_set_blend_color(color);
