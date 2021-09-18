@@ -1,4 +1,5 @@
 PROG_NAME = rdp
+BUILD_DIR = build
 
 ROOTDIR = $(N64_INST)
 GCCN64PREFIX = $(ROOTDIR)/bin/mips64-elf-
@@ -11,6 +12,12 @@ CHKSUM64 = $(ROOTDIR)/bin/chksum64
 N64TOOL = $(ROOTDIR)/bin/n64tool
 MKDFS = $(ROOTDIR)/bin/mkdfs
 
+C_SOURCES = $(wildcard *.c)
+C_INCLUDES = -I.
+
+OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
+vpath %.c $(sort $(dir $(C_SOURCES)))
+
 # WERROR = -w
 # OPT = -O0
 OPT = -O2
@@ -20,29 +27,26 @@ CFLAGS = -g3 $(OPT) -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) -I$(R
 LDFLAGS = -g -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
 N64TOOLFLAGS = -l 2M -h $(ROOTDIR)/mips64-elf/lib/header -t "Video Res Test"
 
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR) 
+	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
-C_SOURCES = $(wildcard *.c)
-OBJECTS = $(C_SOURCES:.c=.o)
-
-ifeq ($(N64_BYTE_SWAP),true)
-$(PROG_NAME).v64: $(PROG_NAME).z64
-	dd conv=swab if=$^ of=$@
-endif
-
-$(PROG_NAME).z64: $(PROG_NAME).bin $(PROG_NAME).dfs
-	$(N64TOOL) $(N64TOOLFLAGS) -o $@ $(PROG_NAME).bin -s 1M $(PROG_NAME).dfs
+$(BUILD_DIR)/$(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).bin $(BUILD_DIR)/$(PROG_NAME).dfs
+	$(N64TOOL) $(N64TOOLFLAGS) -o $@ $(BUILD_DIR)/$(PROG_NAME).bin -s 1M $(BUILD_DIR)/$(PROG_NAME).dfs
 	$(CHKSUM64) $@
 
-$(PROG_NAME).bin: $(PROG_NAME).elf
+$(BUILD_DIR)/$(PROG_NAME).dfs: $(wildcard ./filesystem/*) | $(BUILD_DIR)
+	$(MKDFS) $@ ./filesystem/
+
+$(BUILD_DIR)/$(PROG_NAME).bin: $(BUILD_DIR)/$(PROG_NAME).elf
 	$(OBJCOPY) $< $@ -O binary
 
-$(PROG_NAME).elf: $(OBJECTS)
+$(BUILD_DIR)/$(PROG_NAME).elf: $(OBJECTS)
 	$(LD) -o $@ $^ $(LDFLAGS)
 
-$(PROG_NAME).dfs: $(wildcard ./filesystem/*)
-	$(MKDFS) $@ ./filesystem/
+$(BUILD_DIR):
+	mkdir $@
 
 .PHONY: clean
 clean:
-	rm -f *.v64 *.z64 *.bin *.dfs *.elf *.o
+	rm -rf $(BUILD_DIR)
 
