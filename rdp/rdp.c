@@ -112,7 +112,7 @@ int main(void)
                 printText(disp, temp, 15, 11 + 2*i);
             }
 
-            sprintf(temp, "%ld x %ld x %ld x AA=%ld", __width, __height, __bitdepth, antialias);
+            sprintf(temp, "%ld x %ld x %ld x AA=%d", __width, __height, __bitdepth, antialias);
             printText(disp, temp, 15, 25);
         }
 
