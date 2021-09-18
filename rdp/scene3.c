@@ -132,6 +132,8 @@ void scene3(display_context_t disp, uint32_t t[8])
 
     t[2] = TICKS_READ();
 
+    uint32_t last_color = 0;
+
     // hi-nibble - 4 bits color-index
     // lo-nibble - 4 bits number of polygon vertices
     for (;;) {
@@ -156,8 +158,11 @@ void scene3(display_context_t disp, uint32_t t[8])
                     points_y[ii] = (point_xy & 0xff) * sy;
                 }
 
-                rdp_enable_blend_fill();
-                rdp_set_blend_color(color);
+                if (color != last_color) {
+                    rdp_sync(SYNC_PIPE);
+                    rdp_set_blend_color(color);
+                    last_color = color;
+                }
 
                 // Draw polygon as a triangle fan with a root at index 0.
                 // Might have to tesselate?
@@ -166,7 +171,6 @@ void scene3(display_context_t disp, uint32_t t[8])
                                              points_x[i - 1], points_y[i - 1],
                                              points_x[    i], points_y[    i]);
                 }
-                rdp_sync(SYNC_PIPE);
             }
         }
     }
