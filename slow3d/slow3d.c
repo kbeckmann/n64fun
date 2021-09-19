@@ -17,6 +17,7 @@ static void vblCallback(void)
 }
 
 scene_t *scenes[] = {
+    &scene2,
     &scene1,
 };
 

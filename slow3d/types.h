@@ -19,4 +19,5 @@ typedef struct {
 
 typedef struct {
     Vector4f pos;
+    uint32_t col;
 } Vertex;

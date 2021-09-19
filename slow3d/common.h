@@ -35,5 +35,6 @@ extern uint32_t g_frame;
 void printText(display_context_t dc, char *msg, int x, int y);
 
 void scene1(display_context_t disp, uint32_t t[8]);
+void scene2(display_context_t disp, uint32_t t[8]);
 
 
