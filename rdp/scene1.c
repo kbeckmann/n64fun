@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Konrad Beckmann
+// SPDX-License-Identifier: MIT
+
 #include "common.h"
 
 void scene1(display_context_t disp, uint32_t t[8])

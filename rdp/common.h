@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Konrad Beckmann
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <stdio.h>

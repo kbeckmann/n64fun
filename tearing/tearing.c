@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Konrad Beckmann
+// SPDX-License-Identifier: MIT
 // Based on https://github.com/DragonMinded/libdragon/blob/trunk/examples/vtest/vtest.c
 
 #include <stdio.h>

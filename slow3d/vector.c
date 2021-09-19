@@ -1,3 +1,6 @@
+// Copyright (c) 2021 Konrad Beckmann
+// SPDX-License-Identifier: MIT
+
 #include "vector.h"
 
 void vector_transform(const Matrix4f *m, const Vector4f *in, Vector4f *out)

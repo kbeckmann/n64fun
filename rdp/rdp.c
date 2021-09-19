@@ -1,3 +1,5 @@
+// Copyright (c) 2021 Konrad Beckmann
+// SPDX-License-Identifier: MIT
 // Modified version of examples/spritemap/spritemap.c
 
 #include "common.h"

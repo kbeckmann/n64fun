@@ -1,6 +1,8 @@
+// Source: https://github.com/ssloy/tinyraytracer/blob/master/tinyraytracer.cpp
+// Source license: DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+
 #pragma GCC optimize("Ofast")
 
-// Port of https://github.com/ssloy/tinyraytracer
 
 #include "geometry.h"
 

@@ -1,3 +1,6 @@
+// Source: https://github.com/ssloy/tinyraytracer/blob/master/geometry.h
+// Source license: DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+
 #ifndef __GEOMETRY_H__
 #define __GEOMETRY_H__
 #include <cmath>

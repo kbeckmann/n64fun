@@ -1,7 +1,7 @@
 // Copyright (c) 2021 Konrad Beckmann
 // Copyright (c) 2021 SiliconSloth
-// SPDX-License-Identifier: MIT
 // Based on https://github.com/SiliconSloth/tri3d/blob/master/src/matrix.c
+// SPDX-License-Identifier: MIT
 
 #include <math.h>
 

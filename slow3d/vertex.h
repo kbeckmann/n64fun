@@ -1,6 +1,4 @@
 // Copyright (c) 2021 Konrad Beckmann
-// Copyright (c) 2021 SiliconSloth
-// Based on https://github.com/SiliconSloth/tri3d/blob/master/include/matrix.h
 // SPDX-License-Identifier: MIT
 
 #pragma once

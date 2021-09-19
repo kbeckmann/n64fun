@@ -1,7 +1,9 @@
-#include "common.h"
-
+// Copyright (c) 2021 Konrad Beckmann
+// SPDX-License-Identifier: MIT
 // http://arsantica-online.com/st-niccc-competition/
 // Implementation inspired by http://luis.net/projects/svg/st-niccc/js/svg.js
+
+#include "common.h"
 
 static inline uint32_t bit_test(uint32_t num, uint32_t bit)
 {
