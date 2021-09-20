@@ -5,6 +5,8 @@
 *.lst
 *.dfs
 
+_*.obj
+
 .vscode/*
 */history
 

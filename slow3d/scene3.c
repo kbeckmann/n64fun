@@ -9,14 +9,53 @@ void scene3(display_context_t disp, uint32_t t[8])
 {
     static int initialized;
     static fastObjMesh *mesh;
+    static int mesh_index;
+    static int mesh_count;
+    static fastObjMesh *meshes[256];
+    static char *mesh_names[256];
+
+    static float tx;
+    static float ty;
+    static float tz = 6.0f;
+
+    static float rx = M_PI/4;
+    static float rz = M_PI/4;
 
     if (!initialized) {
         initialized = 1;
-        mesh = fast_obj_read_with_callbacks("/icosphere.obj", &fast_obj_dfs_cb, NULL);
+        char path[256];
 
-        // This will look bad becuase the lack of a Z-buffer
-        // mesh = fast_obj_read_with_callbacks("/monkey0.obj", &fast_obj_dfs_cb, NULL);
+        int flags = dfs_dir_findfirst("/", path);
+        while (flags == FLAGS_FILE) {
+            fprintf(stderr, "Loading %s\n", path);
+            if (strstr(path, ".obj")) {
+                mesh_names[mesh_count] = strdup(path);
+                meshes[mesh_count] = fast_obj_read_with_callbacks(path, &fast_obj_dfs_cb, NULL);
+                mesh_count++;
+            }
+            flags = dfs_dir_findnext(path);
+        }
+
+        mesh = meshes[0];
     }
+
+    struct controller_data keys = get_keys_down();
+    if (keys.c[0].right) {
+        mesh_index = (mesh_index + 1) % mesh_count;
+        mesh = meshes[mesh_index];
+        fprintf(stderr, "Rendering mesh [%s]\n", mesh_names[mesh_index]);
+    }
+
+    keys = get_keys_pressed();
+    if (keys.c[0].R) {
+        tz -= 0.1f;
+    }
+
+    if (keys.c[0].L) {
+        tz += 0.1f;
+    }
+
+    // TODO: Handle rotation with the stick
 
     rdp_sync(SYNC_PIPE);
     t[1] = TICKS_READ();
@@ -47,15 +86,15 @@ void scene3(display_context_t disp, uint32_t t[8])
 
     matrix_perspective(&projection, fov, aspect, near, far);
 
-    matrix_translate(&translation, 0.0f, 0.0f, 4.0f);
+    matrix_translate(&translation, tx, ty, tz);
 
     // Rotate the cube 45 degrees around the x and z axis, then rotate over time around the y axis.
     Matrix4f rot_x;
     Matrix4f rot_y;
     Matrix4f rot_z;
     Matrix4f tmp;
-    matrix_rotate_x(&rot_x, M_PI/4);
-    matrix_rotate_z(&rot_z, M_PI/4);
+    matrix_rotate_x(&rot_x, rx);
+    matrix_rotate_z(&rot_z, rz);
     matrix_rotate_y(&rot_y, g_frame / 30.0f);
     matrix_mul(&rot_z, &rot_x, &tmp);
     matrix_mul(&rot_y, &tmp, &rotation);
@@ -77,8 +116,6 @@ void scene3(display_context_t disp, uint32_t t[8])
     for (unsigned int ii = 0; ii < mesh->group_count; ii++) {
         const fastObjGroup *grp = &mesh->groups[ii];
         uint32_t idx = 0;
-
-        fprintf(stderr, "group=[%s]\n", grp->name);
 
         //  For each face in group
         for (unsigned int jj = 0; jj < grp->face_count; jj++) {

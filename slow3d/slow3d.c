@@ -137,7 +137,7 @@ int main(void)
                 display_init(resolution, bitdepth, 2, GAMMA_NONE, antialias);
                 set_VI_interrupt(1, 590);
             }
-            if (keys.c[0].right) {
+            if (keys.c[0].down) {
                 antialias = (antialias + 1) % (ANTIALIAS_RESAMPLE_FETCH_ALWAYS + 1);
                 display_close();
                 display_init(resolution, bitdepth, 2, GAMMA_NONE, antialias);
