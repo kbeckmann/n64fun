@@ -77,6 +77,9 @@ int main(void)
         }
 
         if (print_stats) {
+            sprintf(temp, "frame %ld", g_frame);
+            printText(disp, temp, 15, 0);
+
             t_delta_ms = t_frame / (TICKS_PER_SECOND / 1000);
 
             sprintf(temp, "t_frame=%ld (%ld ms)", t_frame, t_delta_ms);

@@ -119,11 +119,16 @@ void scene2(display_context_t disp, uint32_t t[8])
             last_color = color;
         }
 
+        // fprintf(stderr, "%f\t%f\n",   quad[0].pos.x, quad[0].pos.y);
+        // fprintf(stderr, "%f\t%f\n",   quad[1].pos.x, quad[1].pos.y);
+        // fprintf(stderr, "%f\t%f\n",   quad[2].pos.x, quad[2].pos.y);
+        // fprintf(stderr, "%f\t%f\n\n", quad[3].pos.x, quad[3].pos.y);
+
         // Draw polygon as a triangle fan with a root at index 0.
         for (int i = 2; i < 4; i++) {
-            rdp_draw_filled_triangle(quad[    0].pos.x, quad[    0].pos.y,
-                                     quad[i - 1].pos.x, quad[i - 1].pos.y,
-                                     quad[    i].pos.x, quad[    i].pos.y);
+            rdp_draw_filled_triangle((int)quad[    0].pos.x, (int)quad[    0].pos.y,
+                                     (int)quad[i - 1].pos.x, (int)quad[i - 1].pos.y,
+                                     (int)quad[    i].pos.x, (int)quad[    i].pos.y);
         }
     }
 
