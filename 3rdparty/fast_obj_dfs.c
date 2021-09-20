@@ -23,3 +23,10 @@ unsigned long fast_obj_dfs_file_size(void* file, void* user_data)
 {
     return dfs_size((uint32_t) file);
 }
+
+const fastObjCallbacks fast_obj_dfs_cb = {
+    .file_open  = fast_obj_dfs_file_open,
+    .file_close = fast_obj_dfs_file_close,
+    .file_read  = fast_obj_dfs_file_read,
+    .file_size  = fast_obj_dfs_file_size
+};
