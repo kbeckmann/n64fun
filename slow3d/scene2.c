@@ -5,8 +5,6 @@
 
 void scene2(display_context_t disp, uint32_t t[8])
 {
-    // Just clears the screen, nothing else
-
     rdp_sync(SYNC_PIPE);
     t[1] = TICKS_READ();
 
@@ -36,12 +34,18 @@ void scene2(display_context_t disp, uint32_t t[8])
 
     matrix_perspective(&projection, fov, aspect, near, far);
 
-    // matrix_translate(&translation, 0.0f, 0.0f, 3.0f);
-    matrix_translate(&translation, 0.0f, -2.0f, 6.0f);
-    // matrix_translate(&translation, 0.0f, 0.0f, g_frame / 10.0f);
+    matrix_translate(&translation, 0.0f, 0.0f, 4.0f);
 
-    // matrix_rotate_y(&rotation, 0);
-    matrix_rotate_y(&rotation, g_frame / 100.0f);
+    // Rotate the cube 45 degrees around the x and z axis, then rotate over time around the y axis.
+    Matrix4f rot_x;
+    Matrix4f rot_y;
+    Matrix4f rot_z;
+    Matrix4f tmp;
+    matrix_rotate_x(&rot_x, M_PI/4);
+    matrix_rotate_z(&rot_z, M_PI/4);
+    matrix_rotate_y(&rot_y, g_frame / 100.0f);
+    matrix_mul(&rot_z, &rot_x, &tmp);
+    matrix_mul(&rot_y, &tmp, &rotation);
 
     matrix_mul(&translation, &rotation, &temp);
     matrix_mul(&projection, &temp, &transform);
@@ -58,10 +62,10 @@ void scene2(display_context_t disp, uint32_t t[8])
             CREATE_V( 1,  -1, -1, 0x00ff00ff),
         },
         { // left, orange
-            CREATE_V(-1, -1,  1, 0xffa500ff),
-            CREATE_V(-1,  1,  1, 0xffa500ff),
-            CREATE_V(-1,  1, -1, 0xffa500ff),
-            CREATE_V(-1, -1, -1, 0xffa500ff),
+            CREATE_V(-1, -1,  1, 0xff8c00ff),
+            CREATE_V(-1,  1,  1, 0xff8c00ff),
+            CREATE_V(-1,  1, -1, 0xff8c00ff),
+            CREATE_V(-1, -1, -1, 0xff8c00ff),
         },
         { // right, red
             CREATE_V(1, -1, -1, 0xff0000ff),
@@ -71,9 +75,9 @@ void scene2(display_context_t disp, uint32_t t[8])
         },
         { // back, blue
             CREATE_V( 1, -1, 1, 0x0000ffff),
-            CREATE_V(-1, -1, 1, 0x0000ffff),
-            CREATE_V(-1,  1, 1, 0x0000ffff),
             CREATE_V( 1,  1, 1, 0x0000ffff),
+            CREATE_V(-1,  1, 1, 0x0000ffff),
+            CREATE_V(-1, -1, 1, 0x0000ffff),
         },
         { // top, white
             CREATE_V(-1, 1, -1, 0xffffffff),
@@ -102,14 +106,20 @@ void scene2(display_context_t disp, uint32_t t[8])
             vertex_perspective_divide(&quad[j]);
         }
 
-        // Draw polygon as a triangle fan with a root at index 0.
+        // Back-face culling. Only draw clock-wise/right hand triangles.
+        if (vertex_triangle_area2(&quad[0], &quad[1], &quad[2]) <= 0) {
+            continue;
+        }
+
+        // Sync pipe and set color if it is changed
         uint32_t color = quad[0].col;
         if (color != last_color) {
             rdp_sync(SYNC_PIPE);
-            rdp_set_blend_color(quad[0].col);
             rdp_set_blend_color(color);
             last_color = color;
         }
+
+        // Draw polygon as a triangle fan with a root at index 0.
         for (int i = 2; i < 4; i++) {
             rdp_draw_filled_triangle(quad[    0].pos.x, quad[    0].pos.y,
                                      quad[i - 1].pos.x, quad[i - 1].pos.y,
