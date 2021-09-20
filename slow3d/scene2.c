@@ -99,7 +99,7 @@ void scene2(display_context_t disp, uint32_t t[8])
     rdp_enable_blend_fill();
     uint32_t last_color = 0;
     for (int i = 0; i < ARRAY_SIZE(cube); i++) {
-        Vertex *quad = &cube[i];
+        Vertex *quad = cube[i];
         for (int j = 0; j < 4; j++) {
             vertex_transform(&transform, &quad[j], &quad[j]);
             vertex_transform(&screenSpaceTransform, &quad[j], &quad[j]);
