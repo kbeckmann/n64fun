@@ -15,6 +15,7 @@
 #include "matrix.h"
 #include "vector.h"
 #include "vertex.h"
+#include "fast_obj.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -36,5 +37,6 @@ void printText(display_context_t dc, char *msg, int x, int y);
 
 void scene1(display_context_t disp, uint32_t t[8]);
 void scene2(display_context_t disp, uint32_t t[8]);
+void scene3(display_context_t disp, uint32_t t[8]);
 
 

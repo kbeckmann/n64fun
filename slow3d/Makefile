@@ -12,8 +12,14 @@ CHKSUM64 = $(ROOTDIR)/bin/chksum64
 N64TOOL = $(ROOTDIR)/bin/n64tool
 MKDFS = $(ROOTDIR)/bin/mkdfs
 
-C_SOURCES = $(wildcard *.c)
-C_INCLUDES = -I.
+C_SOURCES = \
+	$(wildcard *.c) \
+	$(wildcard ../3rdparty/*.c)
+
+C_INCLUDES = \
+	-I$(ROOTDIR)/mips64-elf/include \
+	-I. \
+	-I../3rdparty
 
 OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
@@ -23,11 +29,11 @@ vpath %.c $(sort $(dir $(C_SOURCES)))
 OPT = -O2
 
 ASFLAGS = -mtune=vr4300 -march=vr4300
-CFLAGS = -g3 $(OPT) -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) -I$(ROOTDIR)/mips64-elf/include
+CFLAGS = -g3 $(OPT) -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) $(C_DEFS) $(C_INCLUDES)
 LDFLAGS = -g -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
 N64TOOLFLAGS = -l 2M -h $(ROOTDIR)/mips64-elf/lib/header -t "Video Res Test"
 
-$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR) 
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 $(BUILD_DIR)/$(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).bin $(BUILD_DIR)/$(PROG_NAME).dfs
