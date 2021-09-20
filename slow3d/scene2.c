@@ -43,7 +43,7 @@ void scene2(display_context_t disp, uint32_t t[8])
     Matrix4f tmp;
     matrix_rotate_x(&rot_x, M_PI/4);
     matrix_rotate_z(&rot_z, M_PI/4);
-    matrix_rotate_y(&rot_y, g_frame / 100.0f);
+    matrix_rotate_y(&rot_y, g_frame / 30.0f);
     matrix_mul(&rot_z, &rot_x, &tmp);
     matrix_mul(&rot_y, &tmp, &rotation);
 
@@ -79,13 +79,13 @@ void scene2(display_context_t disp, uint32_t t[8])
             CREATE_V(-1,  1, 1, 0x0000ffff),
             CREATE_V(-1, -1, 1, 0x0000ffff),
         },
-        { // top, white
+        { // up, white
             CREATE_V(-1, 1, -1, 0xffffffff),
             CREATE_V(-1, 1,  1, 0xffffffff),
             CREATE_V( 1, 1,  1, 0xffffffff),
             CREATE_V( 1, 1, -1, 0xffffffff),
         },
-        { // bottom, yellow
+        { // down, yellow
             CREATE_V(-1, -1,  1, 0xffff00ff),
             CREATE_V(-1, -1, -1, 0xffff00ff),
             CREATE_V( 1, -1, -1, 0xffff00ff),
