@@ -14,12 +14,15 @@ void scene3(display_context_t disp, uint32_t t[8])
     static fastObjMesh *meshes[256];
     static char *mesh_names[256];
 
+    static int matrix_dirty = 1;
+
     static float tx;
     static float ty;
     static float tz = 6.0f;
 
     static float rx = M_PI/4;
     static float rz = M_PI/4;
+    static float ry = 0;
 
     if (!initialized) {
         initialized = 1;
@@ -49,10 +52,12 @@ void scene3(display_context_t disp, uint32_t t[8])
     keys = get_keys_pressed();
     if (keys.c[0].R) {
         tz -= 0.1f;
+        matrix_dirty = 1;
     }
 
     if (keys.c[0].L) {
         tz += 0.1f;
+        matrix_dirty = 1;
     }
 
     // TODO: Handle rotation with the stick
@@ -71,40 +76,50 @@ void scene3(display_context_t disp, uint32_t t[8])
     t[3] = TICKS_READ();
 
 
-    Matrix4f projection;
-    Matrix4f translation;
-    Matrix4f rotation;
-    Matrix4f transform;
-    Matrix4f screenSpaceTransform;
-    Matrix4f temp;
+    static Matrix4f projection;
+    static Matrix4f translation;
+    static Matrix4f rotation;
+    static Matrix4f transform;
+    static Matrix4f screenSpaceTransform;
+    static Matrix4f screenSpaceTransform_x_transform;
 
-    float fov_degrees = 70;
-    float fov = fov_degrees * (M_PI / 180.0f);
-    float aspect = __width / ((float) __height);
-    float near = 0.01f;
-    float far = 100.0f;
+    // keep spinning
+    // ry = g_frame / 30.0f;
+    matrix_dirty = 1;
 
-    matrix_perspective(&projection, fov, aspect, near, far);
+    if (matrix_dirty) {
+        Matrix4f temp;
+        float fov_degrees = 70;
+        float fov = fov_degrees * (M_PI / 180.0f);
+        float aspect = __width / ((float) __height);
+        float near = 0.01f;
+        float far = 100.0f;
 
-    matrix_translate(&translation, tx, ty, tz);
+        matrix_perspective(&projection, fov, aspect, near, far);
 
-    // Rotate the cube 45 degrees around the x and z axis, then rotate over time around the y axis.
-    Matrix4f rot_x;
-    Matrix4f rot_y;
-    Matrix4f rot_z;
-    Matrix4f tmp;
-    matrix_rotate_x(&rot_x, rx);
-    matrix_rotate_z(&rot_z, rz);
-    matrix_rotate_y(&rot_y, g_frame / 30.0f);
-    matrix_mul(&rot_z, &rot_x, &tmp);
-    matrix_mul(&rot_y, &tmp, &rotation);
+        matrix_translate(&translation, tx, ty, tz);
 
-    matrix_mul(&translation, &rotation, &temp);
-    matrix_mul(&projection, &temp, &transform);
+        // Rotate the cube 45 degrees around the x and z axis, then rotate over time around the y axis.
+        Matrix4f rot_x;
+        Matrix4f rot_y;
+        Matrix4f rot_z;
+        Matrix4f tmp;
+        matrix_rotate_x(&rot_x, rx);
+        matrix_rotate_z(&rot_z, rz);
+        matrix_rotate_y(&rot_y, ry);
+        matrix_mul(&rot_z, &rot_x, &tmp);
+        matrix_mul(&rot_y, &tmp, &rotation);
 
-    matrix_screen_space_transform(&screenSpaceTransform, __width / 2.0f, __height / 2.0f);
+        matrix_mul(&translation, &rotation, &temp);
+        matrix_mul(&projection, &temp, &transform);
 
-    #define CREATE_V(_x, _y, _z, _col) {.pos = {.x = (_x), .y = (_y), .z = (_z), .w = 1}, .col = (_col)}
+        matrix_screen_space_transform(&screenSpaceTransform, __width / 2.0f, __height / 2.0f);
+
+        // Precalculate screenSpaceTransform * transform so we don't have to do that for every vertex
+        matrix_mul(&screenSpaceTransform, &transform, &screenSpaceTransform_x_transform);
+
+        matrix_dirty = 0;
+    }
 
     t[4] = TICKS_READ();
 
@@ -141,8 +156,9 @@ void scene3(display_context_t disp, uint32_t t[8])
             }
 
             for (int j = 0; j < fv; j++) {
-                vertex_transform(&transform, &face[j], &face[j]);
-                vertex_transform(&screenSpaceTransform, &face[j], &face[j]);
+                // vertex_transform(&transform, &face[j], &face[j]);
+                // vertex_transform(&screenSpaceTransform, &face[j], &face[j]);
+                vertex_transform(&screenSpaceTransform_x_transform, &face[j], &face[j]);
                 vertex_perspective_divide(&face[j]);
             }
 

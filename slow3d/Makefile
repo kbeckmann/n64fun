@@ -26,11 +26,13 @@ vpath %.c $(sort $(dir $(C_SOURCES)))
 
 # WERROR = -w
 # OPT = -O0
-OPT = -O2
+OPT   = -O2 -ffast-math
+LDOPT =
+
 
 ASFLAGS = -mtune=vr4300 -march=vr4300
 CFLAGS = -g3 $(OPT) -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) $(C_DEFS) $(C_INCLUDES)
-LDFLAGS = -g -L$(ROOTDIR)/mips64-elf/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
+LDFLAGS = -g $(OPT) -L$(ROOTDIR)/mips64-elf/lib -lc -lm -ldragon -ldragonsys -Tn64.ld
 N64TOOLFLAGS = -l 2M -h $(ROOTDIR)/mips64-elf/lib/header -t "Video Res Test"
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
@@ -47,7 +49,7 @@ $(BUILD_DIR)/$(PROG_NAME).bin: $(BUILD_DIR)/$(PROG_NAME).elf
 	$(OBJCOPY) $< $@ -O binary
 
 $(BUILD_DIR)/$(PROG_NAME).elf: $(OBJECTS)
-	$(LD) -o $@ $^ $(LDFLAGS)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BUILD_DIR):
 	mkdir $@
