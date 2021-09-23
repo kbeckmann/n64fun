@@ -222,7 +222,7 @@ int main(void)
         fprintf(stderr, "flags=%08X\n", flags);
     }
 
-    mesh = meshes[1]; // hardcode for now
+    mesh = meshes[3]; // hardcode for now
 
     ugfx_vertex_t *mesh_vtx;
     ugfx_command_t *mesh_cmd;
@@ -279,7 +279,7 @@ int main(void)
         ugfx_matrix_t m_matrix;
 
         /* Quick'n'dirty rotation + translation matrix */
-        float z = -7.0f;
+        float z = -3.0f;
         float angle = RADIANS((float)(rotation_counter++) * 4.0f);
         float c = cosf(angle);
         float s = sinf(angle);
