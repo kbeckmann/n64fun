@@ -1358,6 +1358,7 @@ fastObjMesh* fast_obj_read_with_callbacks(const char* path, const fastObjCallbac
 
     /* Create buffer for reading file */
     buffer = (char*)(memory_realloc(0, 2 * BUFFER_SIZE * sizeof(char)));
+    fprintf(stderr, " buffer=%p\n", buffer);
     if (!buffer)
         return 0;
 
