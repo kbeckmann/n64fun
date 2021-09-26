@@ -200,6 +200,7 @@ int main(void)
     dfs_init(DFS_DEFAULT_LOCATION);
 
     static fastObjMesh *mesh;
+    static int mesh_index;
     static int mesh_count;
     static fastObjMesh *meshes[256];
     static char *mesh_names[256];
@@ -224,16 +225,11 @@ int main(void)
         fprintf(stderr, "flags=%08X\n", flags);
     }
 
-    mesh = meshes[3]; // hardcode for now
-
     ugfx_vertex_t *mesh_vtx;
     ugfx_command_t *mesh_cmd;
     uint32_t mesh_cmd_len;
     uint32_t mesh_vtx_len;
-
-    fprintf(stderr, "Loading mesh %s\n", mesh_names[0]);
-    load_mesh_vertices(mesh, &mesh_vtx, &mesh_vtx_len, &mesh_cmd, &mesh_cmd_len);
-    fprintf(stderr, "Loaded %s\n", mesh_names[0]);
+    int32_t loaded_mesh_idx = -1;
 
     /* Load texture file */
     // int fp = dfs_open("/test.sprite");
@@ -257,6 +253,7 @@ int main(void)
 
     float near_plane = .1f;
     float far_plane = 100.f;
+    static float tz = -5.0f;
 
     perspective(RADIANS(70.f), 4.f/3.f, near_plane, far_plane, pv_matrix_f);
     ugfx_matrix_from_column_major(&pv_matrix, pv_matrix_f[0]);
@@ -273,6 +270,32 @@ int main(void)
 
     while (1)
     {
+        // Key input
+        controller_scan();
+        struct controller_data keys = get_keys_down();
+        if (keys.c[0].right) {
+            mesh_index = (mesh_index + 1) % mesh_count;
+            fprintf(stderr, "Rendering mesh [%s]\n", mesh_names[mesh_index]);
+        }
+
+        keys = get_keys_pressed();
+        if (keys.c[0].R) {
+            tz -= 0.1f;
+        }
+
+        if (keys.c[0].L) {
+            tz += 0.1f;
+        }
+
+        if (loaded_mesh_idx != mesh_index) {
+            mesh = meshes[mesh_index];
+            loaded_mesh_idx = mesh_index;
+
+            fprintf(stderr, "Loading mesh %s\n", mesh_names[0]);
+            load_mesh_vertices(mesh, &mesh_vtx, &mesh_vtx_len, &mesh_cmd, &mesh_cmd_len);
+            fprintf(stderr, "Loaded %s\n", mesh_names[0]);
+        }
+
         static display_context_t disp = 0;
 
         /* Grab a render buffer */
@@ -281,7 +304,6 @@ int main(void)
         ugfx_matrix_t m_matrix;
 
         /* Quick'n'dirty rotation + translation matrix */
-        float z = -3.0f;
         float angle = RADIANS((float)(rotation_counter++) * 4.0f);
         float c = cosf(angle);
         float s = sinf(angle);
@@ -289,7 +311,7 @@ int main(void)
             {c,    0.0f, -s,   0.0f},
             {0.0f, 1.0f, 0.0f, 0.0f},
             {s,    0.0f, c,    0.0f},
-            {0.0f, 0.0f, z,    1.0f}
+            {0.0f, 0.0f, tz,   1.0f}
         };
 
         ugfx_matrix_from_column_major(&m_matrix, m_matrix_f[0]);
