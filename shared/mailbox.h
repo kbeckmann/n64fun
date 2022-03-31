@@ -32,7 +32,7 @@
         }
 */
 
-#define MAILBOX_PAYLOAD_SIZE (64)
+#define MAILBOX_PAYLOAD_WORDS (64)
 
 typedef enum {
     MAILBOX_STATUS_IDLE    = (1 << 0), // Transmitter is ready to write, Receiver must not read
@@ -45,39 +45,33 @@ typedef enum {
 typedef struct {
     uint32_t status; // mailbox_status_t
     uint32_t length;
-    uint8_t  payload[MAILBOX_PAYLOAD_SIZE];
-} mailbox_msg_t;
-
-#define MAILBOX_BASE (0x10f00000)
-
-// Cart to N64 (Incoming)
-#define MAILBOX0 ((volatile mailbox_t *) (MAILBOX_BASE))
-
-// N64 to Cart (Outgoing)
-#define MAILBOX1 ((volatile mailbox_t *) (MAILBOX_BASE + sizeof(mailbox_msg_t)))
+    uint32_t payload[MAILBOX_PAYLOAD_WORDS];
+} mailbox_t;
 
 /**
  * @brief      Receives a payload from the mailbox.
  *
- * @param      block  Set to `true` for blocking operation.
- * @param[out] buf    Receive buffer. Must be at least MAILBOX_PAYLOAD_SIZE bytes large.
+ * @param      block_ready  Set to `true` to block until receive is possible.
+ * @param      block_acked  Set to `true` to block until transmitter has acked our ack.
+ * @param[out] payload      Receive buffer. Buffer must be 32 bit aligned.
+ *                          Must be at least MAILBOX_PAYLOAD_WORDS words large.
  * @return     Length or error code
- *             - -1, No pending payload. Only if \p block is `false`.
+ *             - -1, No pending payload. Only if \p block_ready is `false`.
  *             - >=0, Length of the received payload.
  */
-int32_t mailbox_rx(bool block, uint8_t *buf);
+int32_t mailbox_rx(bool block_ready, bool block_acked, uint32_t *payload);
 
 /**
  * @brief      Transmits a payload to the mailbox.
  *
- * @param      block_outgoing  Set to `true` to block until transmit is possible.
- * @param      block_received  Set to `true` to block until payload has been received.
- * @param[in]  buf             Transmit buffer.
- * @param      length          Length of transmit buffer. Must not be larger than MAILBOX_PAYLOAD_SIZE bytes.
+ * @param      block_ready  Set to `true` to block until transmit is possible.
+ * @param      block_acked  Set to `true` to block until payload has been acked by the receiver.
+ * @param[in]  payload      Transmit buffer. Buffer must be 32 bit aligned.
+ * @param      length       Number of 32-bit words to transmit. Must not be larger than MAILBOX_PAYLOAD_WORDS.
  * @return     Error code
- *             - -1, Mailbox busy (receiver is reading). Only if \p block_outgoing is `false`.
- *             -  0, Message transmitted but not read. Only if \p block_received is `false`.
- *             -  1, Message transmitted and read.
+ *             - -1, Mailbox busy (receiver is reading). Only if \p block_ready is `false`.
+ *             -  0, Message transmitted but not acked. Only if \p block_acked is `false`.
+ *             -  1, Message transmitted and acked.
  */
-int32_t mailbox_tx(bool block_outgoing, bool block_received, uint8_t *buf, uint32_t length);
+int32_t mailbox_tx(bool block_ready, bool block_acked, uint32_t *payload, uint32_t length);
 
