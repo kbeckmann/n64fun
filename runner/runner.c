@@ -7,16 +7,41 @@
 #include <stdint.h>
 #include <libdragon.h>
 
+#include "mailbox.h"
+#include "command.h"
+
+
+uint32_t payload_rx[MAILBOX_PAYLOAD_WORDS] __attribute__((aligned (4)));
+uint32_t payload_tx[MAILBOX_PAYLOAD_WORDS] __attribute__((aligned (4)));
 
 int main(void)
 {
-    // enable debug for emulators
-    debug_init(DEBUG_FEATURE_LOG_ISVIEWER);
+    command_t *cmd_rx = (command_t *) payload_rx;
 
-    int i = 0;
+    mailbox_init();
+
     while (1) {
-        i++;
-        // io_write()
+        int32_t len_rx = mailbox_rx(payload_rx, true, true, 100000);
+
+        if (len_rx < 0) {
+            continue;
+        }
+
+        switch (cmd_rx->type) {
+            case COMMAND_PEEK:
+                assert(cmd_rx->peek.length <= MAILBOX_PAYLOAD_WORDS);
+                memcpy(payload_tx, cmd_rx->peek.address, cmd_rx->peek.length * 4);
+                mailbox_tx(payload_tx, cmd_rx->peek.length, true, true, 100000);
+                break;
+
+            case COMMAND_POKE:
+                memcpy(cmd_rx->peek.address, cmd_rx->poke.data, len_rx * 4);
+                break;
+
+            case COMMAND_EXECUTE:
+                ((void (*)(void)) cmd_rx->execute.address)();
+                break;
+        }
     }
 
     return 0;
