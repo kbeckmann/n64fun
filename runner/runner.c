@@ -19,10 +19,20 @@ struct __attribute__((aligned (1024*1024)))
 {
     uint32_t program[1024];
     uint32_t data[1024];
+    struct {
+        uint64_t cpu[32];
+        uint64_t fpu[32];
+        uint64_t lo;
+        uint64_t hi;
+        uint64_t fc31;
+    } regs;
 } scratch;
 
+const uint64_t *regs_address = &scratch.regs;
 
-void call(uint32_t address)
+void call_and_save(uint32_t address);
+
+__attribute__ ((noinline)) void call(uint32_t address)
 {
     // Maybe ensure address is uncached ?
     // address = UncachedAddr(address);
@@ -30,9 +40,11 @@ void call(uint32_t address)
     data_cache_writeback_invalidate_all();
     inst_cache_invalidate_all();
     MEMORY_BARRIER();
-    ((void (*)(void)) address)();
-}
 
+    call_and_save(address);
+//    ((void (*)(void)) address)();
+
+}
 
 int main(void)
 {

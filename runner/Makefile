@@ -20,8 +20,14 @@ C_INCLUDES = \
 	-I. \
 	-I../shared
 
-OBJECTS = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
+AS_SOURCES = \
+	$(wildcard *.S) \
+	$(wildcard ../shared/*.S)
+
+OBJECTS  = $(addprefix $(BUILD_DIR)/,$(notdir $(C_SOURCES:.c=.o)))
+OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(AS_SOURCES:.S=.o)))
 vpath %.c $(sort $(dir $(C_SOURCES)))
+vpath %.S $(sort $(dir $(AS_SOURCES)))
 
 # WERROR = -w
 # OPT = -O0
@@ -36,6 +42,9 @@ N64TOOLFLAGS = -l 1M -h $(ROOTDIR)/mips64-elf/lib/header -t "Mailbox test"
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	$(CC) -o $@ $< -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) 
+
+$(BUILD_DIR)/%.o: %.S | $(BUILD_DIR)
+	$(AS) -o $@ $< $(ASFLAGS)
 
 $(BUILD_DIR)/$(PROG_NAME).z64: $(BUILD_DIR)/$(PROG_NAME).bin
 	$(N64TOOL) $(N64TOOLFLAGS) -o $@ $(BUILD_DIR)/$(PROG_NAME).bin -s 1M
