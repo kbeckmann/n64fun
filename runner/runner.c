@@ -14,6 +14,26 @@
 uint32_t payload_rx[MAILBOX_PAYLOAD_WORDS] __attribute__((aligned (4)));
 uint32_t payload_tx[MAILBOX_PAYLOAD_WORDS] __attribute__((aligned (4)));
 
+// should end up at 0x80100000
+struct __attribute__((aligned (1024*1024)))
+{
+    uint32_t program[1024];
+    uint32_t data[1024];
+} scratch;
+
+
+void call(uint32_t address)
+{
+    // Maybe ensure address is uncached ?
+    // address = UncachedAddr(address);
+
+    data_cache_writeback_invalidate_all();
+    inst_cache_invalidate_all();
+    MEMORY_BARRIER();
+    ((void (*)(void)) address)();
+}
+
+
 int main(void)
 {
     command_t *cmd_rx = (command_t *) payload_rx;
@@ -39,7 +59,7 @@ int main(void)
                 break;
 
             case COMMAND_EXECUTE:
-                ((void (*)(void)) cmd_rx->execute.address)();
+                call(cmd_rx->execute.address);
                 break;
         }
     }
