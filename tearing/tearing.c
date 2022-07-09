@@ -106,7 +106,7 @@ void delay(int cnt)
 void init_n64(void)
 {
     /* enable interrupts (on the CPU) */
-    init_interrupts();
+    // init_interrupts();
 
     /* Initialize peripherals */
     display_init( RESOLUTION_320x240, DEPTH_32_BPP, 2, GAMMA_NONE, ANTIALIAS_RESAMPLE );

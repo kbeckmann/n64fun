@@ -8,8 +8,8 @@ CC = $(GCCN64PREFIX)gcc
 AS = $(GCCN64PREFIX)as
 LD = $(GCCN64PREFIX)ld
 OBJCOPY = $(GCCN64PREFIX)objcopy
-CHKSUM64 = $(ROOTDIR)/bin/chksum64
 N64TOOL = $(ROOTDIR)/bin/n64tool
+CHKSUM64 = $(ROOTDIR)/bin/chksum64
 MKDFS = $(ROOTDIR)/bin/mkdfs
 
 C_SOURCES = \
@@ -18,6 +18,7 @@ C_SOURCES = \
 
 C_INCLUDES = \
 	-I$(ROOTDIR)/mips64-elf/include \
+	-I$(ROOTDIR)/include \
 	-I. \
 	-I../3rdparty
 
@@ -31,8 +32,9 @@ LDOPT =
 
 
 ASFLAGS = -mtune=vr4300 -march=vr4300
-CFLAGS = -g3 $(OPT) -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall $(WERROR) $(C_DEFS) $(C_INCLUDES)
-LDFLAGS = -g $(OPT) -L$(ROOTDIR)/mips64-elf/lib -lc -lm -ldragon -ldragonsys -Tn64.ld
+CFLAGS = $(OPT) -std=gnu99 -march=vr4300 -mtune=vr4300 -Wall -Werror $(WERROR) $(C_DEFS) $(C_INCLUDES)
+LDFLAGS = -L$(ROOTDIR)/mips64-elf/lib -L$(ROOTDIR)/lib -ldragon -lc -lm -ldragonsys -Tn64.ld --gc-sections
+
 N64TOOLFLAGS = -l 2M -h $(ROOTDIR)/mips64-elf/lib/header -t "Video Res Test"
 
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
@@ -49,7 +51,7 @@ $(BUILD_DIR)/$(PROG_NAME).bin: $(BUILD_DIR)/$(PROG_NAME).elf
 	$(OBJCOPY) $< $@ -O binary
 
 $(BUILD_DIR)/$(PROG_NAME).elf: $(OBJECTS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+	$(LD) -o $@ $^ $(LDFLAGS)
 
 $(BUILD_DIR):
 	mkdir $@

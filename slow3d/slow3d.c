@@ -37,10 +37,11 @@ int main(void)
     // resolution_t resolution = RESOLUTION_640x240;
     bitdepth_t bitdepth = DEPTH_16_BPP;
     // bitdepth_t bitdepth = DEPTH_32_BPP;
-    antialias_t antialias = ANTIALIAS_OFF;
+    // antialias_t antialias = ANTIALIAS_OFF;
+    antialias_t antialias = ANTIALIAS_RESAMPLE;
 
     /* enable interrupts (on the CPU) */
-    init_interrupts();
+    // init_interrupts();
     debug_init_isviewer();
 
     /* Initialize peripherals */
