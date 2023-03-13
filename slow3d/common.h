@@ -33,10 +33,21 @@ extern uint32_t __bitdepth;
 
 extern uint32_t g_frame;
 
+static inline float saturatef(float x)
+{
+    //return (x > 1.0f) ? 1.0f : (x < 0.0f ? 0.0f : x);
+    if (x > 1.0f)
+        return 1.0f;
+    if (x < 0.0f)
+        return 0.0f;
+    return x;
+}
+
 void printText(display_context_t dc, char *msg, int x, int y);
 
 void scene1(display_context_t disp, uint32_t t[8]);
 void scene2(display_context_t disp, uint32_t t[8]);
 void scene3(display_context_t disp, uint32_t t[8]);
+void scene4(display_context_t disp, uint32_t t[8]);
 
 

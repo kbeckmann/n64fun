@@ -19,5 +19,14 @@ typedef struct {
 
 typedef struct {
     Vector4f pos;
-    uint32_t col;
+    Vector4f normal;
+    union {
+        struct {
+            uint8_t r;
+            uint8_t g;
+            uint8_t b;
+            uint8_t a;
+        };
+        uint32_t rgba;
+    } col;
 } Vertex;

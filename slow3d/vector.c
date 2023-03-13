@@ -14,3 +14,21 @@ void vector_transform(const Matrix4f *m, const Vector4f *in, Vector4f *out)
 
     *out = tmp;
 }
+
+float vector_dot(const Vector4f *a, const Vector4f *b)
+{
+    return (
+        a->x * b->x +
+        a->y * b->y +
+        a->z * b->z +
+        a->w * b->w
+    );
+}
+
+void vector_add(const Vector4f *a, const Vector4f *b, Vector4f *out)
+{
+    out->x = a->x + b->x;
+    out->y = a->y + b->y;
+    out->z = a->z + b->z;
+    out->w = a->w + b->w;
+}

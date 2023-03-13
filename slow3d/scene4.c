@@ -5,7 +5,7 @@
 
 #include "fast_obj_dfs.h"
 
-void scene3(display_context_t disp, uint32_t t[8])
+void scene4(display_context_t disp, uint32_t t[8])
 {
     static int initialized;
     static fastObjMesh *mesh;
@@ -16,12 +16,12 @@ void scene3(display_context_t disp, uint32_t t[8])
 
     static int matrix_dirty = 1;
 
-    static float tx;
-    static float ty;
+    static float tx = 0.0f;
+    static float ty = 0.0f;
     static float tz = 6.0f;
 
-    static float rx = M_PI/4;
-    static float rz = M_PI/4;
+    static float rx = 0; //M_PI/4;
+    static float rz = 0; //M_PI/4;
     static float ry = 0;
 
     if (!initialized) {
@@ -76,15 +76,25 @@ void scene3(display_context_t disp, uint32_t t[8])
     t[3] = TICKS_READ();
 
 
-    static Matrix4f projection;
+    static Matrix4f camera;
     static Matrix4f translation;
     static Matrix4f rotation;
-    static Matrix4f transform;
+    static Matrix4f transRot;
+    static Matrix4f viewProjection;
     static Matrix4f screenSpaceTransform;
-    static Matrix4f screenSpaceTransform_x_transform;
+    static Matrix4f mvp;
+
+    static Vector4f lightDir = {
+        .x = 0.0f,
+        .y = 0.0f,
+        .z = 1.0f,
+        .w = 0.0f,
+    };
+
+    static float ambient = 0.1f;
 
     // keep spinning
-    // ry = g_frame / 30.0f;
+    ry = g_frame / 30.0f;
     matrix_dirty = 1;
 
     if (matrix_dirty) {
@@ -92,10 +102,10 @@ void scene3(display_context_t disp, uint32_t t[8])
         float fov_degrees = 70;
         float fov = fov_degrees * (M_PI / 180.0f);
         float aspect = __width / ((float) __height);
-        float near = 0.01f;
+        float near = 0.1f;
         float far = 100.0f;
 
-        matrix_perspective(&projection, fov, aspect, near, far);
+        matrix_perspective(&camera, fov, aspect, near, far);
 
         matrix_translate(&translation, tx, ty, tz);
 
@@ -103,20 +113,19 @@ void scene3(display_context_t disp, uint32_t t[8])
         Matrix4f rot_x;
         Matrix4f rot_y;
         Matrix4f rot_z;
-        Matrix4f tmp;
         matrix_rotate_x(&rot_x, rx);
         matrix_rotate_z(&rot_z, rz);
         matrix_rotate_y(&rot_y, ry);
-        matrix_mul(&rot_z, &rot_x, &tmp);
-        matrix_mul(&rot_y, &tmp, &rotation);
+        matrix_mul(&rot_z, &rot_x, &transRot);
+        matrix_mul(&rot_y, &transRot, &rotation);
 
         matrix_mul(&translation, &rotation, &temp);
-        matrix_mul(&projection, &temp, &transform);
+        matrix_mul(&camera, &temp, &viewProjection);
 
         matrix_screen_space_transform(&screenSpaceTransform, __width / 2.0f, __height / 2.0f);
 
         // Precalculate screenSpaceTransform * transform so we don't have to do that for every vertex
-        matrix_mul(&screenSpaceTransform, &transform, &screenSpaceTransform_x_transform);
+        matrix_mul(&screenSpaceTransform, &viewProjection, &mvp);
 
         matrix_dirty = 0;
     }
@@ -139,9 +148,17 @@ void scene3(display_context_t disp, uint32_t t[8])
             // For each vertex in face
             assert(fv >= 3);
             Vertex face[fv];
+            float lightAmount[fv];
+            Vector4f flatLightNormal = {0.0f, 0.0f, 0.0f, 0.0f};
+            float flatLightAmount;
+
             for (unsigned int kk = 0; kk < fv; kk++) {
+                Vector4f transformedNormal;
                 fastObjIndex *mi = &mesh->indices[grp->index_offset + idx];
                 idx++;
+
+                face[kk].col.r = jj % 256;
+                face[kk].col.g = jj / 256;
 
                 // Skip if there is no position data
                 if (!mi->p) {
@@ -152,13 +169,29 @@ void scene3(display_context_t disp, uint32_t t[8])
                 face[kk].pos.y = mesh->positions[3 * mi->p + 1];
                 face[kk].pos.z = mesh->positions[3 * mi->p + 2];
                 face[kk].pos.w = 1.0;
-                face[kk].col.rgba = ((jj*123) << 16) | 0xff;
+
+                // Skip if there is no position data
+                if (!mi->n) {
+                    lightAmount[kk] = 1.0f;
+                    // fprintf(stderr, "Missing normal data!\n");
+                    continue;
+                }
+
+                face[kk].normal.x = mesh->positions[3 * mi->n + 0];
+                face[kk].normal.y = mesh->positions[3 * mi->n + 1];
+                face[kk].normal.z = mesh->positions[3 * mi->n + 2];
+                face[kk].normal.w = 0.0;
+
+                vector_transform(&transRot, &face[kk].normal, &transformedNormal);
+
+                lightAmount[kk] = saturatef(vector_dot(&transformedNormal, &lightDir)) * (1.0f - ambient) + ambient;
+                vector_add(&transformedNormal, &flatLightNormal, &flatLightNormal);
             }
 
             for (int j = 0; j < fv; j++) {
                 // vertex_transform(&transform, &face[j], &face[j]);
                 // vertex_transform(&screenSpaceTransform, &face[j], &face[j]);
-                vertex_transform(&screenSpaceTransform_x_transform, &face[j], &face[j]);
+                vertex_transform(&mvp, &face[j], &face[j]);
                 vertex_perspective_divide(&face[j]);
             }
 
@@ -167,8 +200,16 @@ void scene3(display_context_t disp, uint32_t t[8])
                 continue;
             }
 
+            // Only use the first vertex' light for now
+            // uint32_t color = (((int)(face[0].col.r * lightAmount[0])) << 24) | 0xFF;
+            // uint32_t color = (((int)(240.0f * lightAmount[0])) << 24) | 0xFF;
+
+            // Average the normals to do proper flat shading
+            (void) lightAmount;
+            flatLightAmount = saturatef(vector_dot(&flatLightNormal, &lightDir)) * (1.0f - ambient) + ambient;
+            uint32_t color = (((int)(255.0f * flatLightAmount)) << 24) | 0xFF;
+
             // Sync pipe and set color if it is changed
-            uint32_t color = face[0].col.rgba;
             if (color != last_color) {
                 rdp_sync(SYNC_PIPE);
                 rdp_set_blend_color(color);
@@ -176,10 +217,10 @@ void scene3(display_context_t disp, uint32_t t[8])
             }
 
             // Draw polygon as a triangle fan with a root at index 0.
-            for (int i = 2; i < fv; i++) {
+            for (int i = 1; i < fv - 1; i++) {
                 rdp_draw_filled_triangle((int)face[    0].pos.x, (int)face[    0].pos.y,
-                                         (int)face[i - 1].pos.x, (int)face[i - 1].pos.y,
-                                         (int)face[    i].pos.x, (int)face[    i].pos.y);
+                                         (int)face[    i].pos.x, (int)face[    i].pos.y,
+                                         (int)face[i + 1].pos.x, (int)face[i + 1].pos.y);
             }
         }
     }

@@ -24,7 +24,7 @@ struct __attribute__((aligned (1024*1024)))
         uint64_t fpu[32];
         uint64_t lo;
         uint64_t hi;
-        uint64_t fc31;
+        uint32_t fcr31;
     } regs;
 } scratch;
 
@@ -34,15 +34,11 @@ void call_and_save(uint32_t address);
 
 __attribute__ ((noinline)) void call(uint32_t address)
 {
-    // Maybe ensure address is uncached ?
-    // address = UncachedAddr(address);
-
     data_cache_writeback_invalidate_all();
     inst_cache_invalidate_all();
     MEMORY_BARRIER();
 
     call_and_save(address);
-//    ((void (*)(void)) address)();
 
 }
 
@@ -51,6 +47,8 @@ int main(void)
     command_t *cmd_rx = (command_t *) payload_rx;
 
     mailbox_init();
+
+    memset(&scratch, 'A', sizeof(scratch));
 
     while (1) {
         int32_t len_rx = mailbox_rx(payload_rx, true, true, 100000);

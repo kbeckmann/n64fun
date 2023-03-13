@@ -17,6 +17,7 @@ static void vblCallback(void)
 }
 
 scene_t *scenes[] = {
+    &scene4,
     &scene3,
     &scene2,
     &scene1,
@@ -34,14 +35,12 @@ int main(void)
     uint32_t print_stats = 0;
 
     resolution_t resolution = RESOLUTION_320x240;
-    // resolution_t resolution = RESOLUTION_640x240;
+    // resolution_t resolution = RESOLUTION_512x480;
     bitdepth_t bitdepth = DEPTH_16_BPP;
     // bitdepth_t bitdepth = DEPTH_32_BPP;
     // antialias_t antialias = ANTIALIAS_OFF;
     antialias_t antialias = ANTIALIAS_RESAMPLE;
 
-    /* enable interrupts (on the CPU) */
-    // init_interrupts();
     debug_init_isviewer();
 
     /* Initialize peripherals */
@@ -68,7 +67,7 @@ int main(void)
         t0_old = t[0];
 
         /* Set the text output color */
-        graphics_set_color(0x0, 0xFFFFFFFF);
+        graphics_set_color(0x11223344, 0xFFFFFFFF);
 
         // Draw active scene
         scenes[scene](disp, t);

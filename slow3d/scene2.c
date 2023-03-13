@@ -52,7 +52,7 @@ void scene2(display_context_t disp, uint32_t t[8])
 
     matrix_screen_space_transform(&screenSpaceTransform, __width / 2.0f, __height / 2.0f);
 
-    #define CREATE_V(_x, _y, _z, _col) {.pos = {.x = (_x), .y = (_y), .z = (_z), .w = 1}, .col = (_col)}
+    #define CREATE_V(_x, _y, _z, _col) {.pos = {.x = (_x), .y = (_y), .z = (_z), .w = 1}, .col.rgba = (_col)}
 
     Vertex cube[][4] = {
         { // front, green
@@ -112,7 +112,7 @@ void scene2(display_context_t disp, uint32_t t[8])
         }
 
         // Sync pipe and set color if it is changed
-        uint32_t color = quad[0].col;
+        uint32_t color = quad[0].col.rgba;
         if (color != last_color) {
             rdp_sync(SYNC_PIPE);
             rdp_set_blend_color(color);
