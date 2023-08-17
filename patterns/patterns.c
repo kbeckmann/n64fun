@@ -118,6 +118,14 @@ void init_n64(void)
 
 }
 
+static void draw_border(display_context_t dc, int border, int width, int height)
+{
+    graphics_draw_box(dc,
+        border, border,
+        width - 2 * border, height - 2 * border,
+        graphics_make_color(0x00, 0x00, 0xFF, 0xFF));
+}
+
 /* main code entry point */
 int main(void)
 {
@@ -129,7 +137,7 @@ int main(void)
     init_n64();
 
     int frames = 0;
-    int scene = 0;
+    uint32_t scene = 0;
     int vi_line = 0x200; // default from libdragon
     while (1) {
         int width[6]  = { 320, 256, 512, 640, 512, 640 };
@@ -142,40 +150,30 @@ int main(void)
         color = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF);
         graphics_fill_screen(_dc, color);
 
-        int border = 1;
-
-        const int max_scenes = 10;
-        switch (scene % max_scenes) {
+        const int max_scenes = 20;
+        int scene_idx = scene % max_scenes;
+        switch (scene_idx) {
         case 0:
             // Draw gradient from top to bottom
             for (int i = 0; i < height[res]; i++) {
                 graphics_draw_box(_dc, 
                     0, i,
-                    width[res], 1,
+                    width[res] / 3, 1,
                     graphics_make_color(i, 0, 0, 0xFF));
-            }
-            break;
-        case 1:
-            // Draw gradient from top to bottom
-            for (int i = 0; i < height[res]; i++) {
+
                 graphics_draw_box(_dc, 
-                    0, i,
-                    width[res], 1,
+                    width[res] / 3 - 1, i,
+                    width[res] / 3, 1,
                     graphics_make_color(0, i, 0, 0xFF));
-            }
-            break;
-        case 2:
-            // Draw gradient from top to bottom
-            for (int i = 0; i < height[res]; i++) {
+
                 graphics_draw_box(_dc, 
-                    0, i,
-                    width[res], 1,
+                    2 * width[res] / 3 - 2, i,
+                    width[res] / 3 + 3, 1,
                     graphics_make_color(0, 0, i, 0xFF));
             }
             break;
 
-
-        case 3:
+        case 1:
             // Draw Checkerboard all over
             for (int y = 0; y < height[res]; y++) {
                 for (int x = 0; x < width[res]; x++) {
@@ -186,7 +184,7 @@ int main(void)
                 }
             }
             break;
-        case 4:
+        case 2:
             // Draw Checkerboard all over, invert colors every frame
             for (int y = 0; y < height[res]; y++) {
                 for (int x = 0; x < width[res]; x++) {
@@ -197,7 +195,7 @@ int main(void)
                 }
             }
             break;
-        case 5:
+        case 3:
             // Draw diagonal stripes
             for (int y = 0; y < height[res]; y++) {
                 for (int x = 0; x < width[res]; x++) {
@@ -210,37 +208,12 @@ int main(void)
             break;
 
 
-        case 6:
+        case 4 ... 19:
             // Draw border on the outer-most pixels
-                border = 1;
-                graphics_draw_box(_dc, 
-                    border, border,
-                    width[res] - 2 * border, height[res] - 2 * border,
-                    graphics_make_color(0x00, 0x00, 0xFF, 0xFF));
-            break;
-        case 7:
-            // Draw border on the outer-most pixels
-                border = 2;
-                graphics_draw_box(_dc, 
-                    border, border,
-                    width[res] - 2 * border, height[res] - 2 * border,
-                    graphics_make_color(0x00, 0x00, 0xFF, 0xFF));
-            break;
-        case 8:
-            // Draw border on the outer-most pixels
-                border = 4;
-                graphics_draw_box(_dc, 
-                    border, border,
-                    width[res] - 2 * border, height[res] - 2 * border,
-                    graphics_make_color(0x00, 0x00, 0xFF, 0xFF));
-            break;
-        case 9:
-            // Draw border on the outer-most pixels
-                border = 8;
-                graphics_draw_box(_dc, 
-                    border, border,
-                    width[res] - 2 * border, height[res] - 2 * border,
-                    graphics_make_color(0x00, 0x00, 0xFF, 0xFF));
+            draw_border(_dc, scene_idx - 4, width[res], height[res]);
+            graphics_set_color(graphics_make_color(0xFF, 0, 0xFF, 0xFF), 0);
+            sprintf(temp, "Border: %d pixels", scene_idx - 4);
+            printText(_dc, temp, width[res]/16 - 10, 15);
             break;
         }
 
