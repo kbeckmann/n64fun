@@ -200,7 +200,7 @@ int main(void)
     unsigned short buttons = 0;
     unsigned short previous = 0;
 
-    int gain = 1;
+    int gain = 2;
 
     init_n64();
 
