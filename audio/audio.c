@@ -141,6 +141,26 @@ typedef struct audio_sample {
 
 audio_sample_t audio_buffer_a[AUDIO_BUFFER_SIZE];
 
+void generate(int gain)
+{
+    // Generate sine
+    #define SAMPLE_RATE 48000
+    #define FREQUENCY1 375
+    #define FREQUENCY2 (375 * 1.5)
+    // #define M_PI 3.1415926535
+
+    float gainf = (float) gain;
+
+    // Generate 1 second of samples. This *will* make a click every 1 full second, but at least it's known.
+    for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
+        double time = (double)i / SAMPLE_RATE;
+        int16_t sample1 = (int16_t)(gainf * sinf(2.0 * M_PI * FREQUENCY1 * time));
+        int16_t sample2 = (int16_t)(gainf * sinf(2.0 * M_PI * FREQUENCY2 * time));
+
+        audio_buffer_a[i].channels[0] = sample1;
+        audio_buffer_a[i].channels[1] = sample2;
+    }
+}
 
 /* main code entry point */
 int main(void)
@@ -148,24 +168,14 @@ int main(void)
     display_context_t _dc;
     char temp[128];
     unsigned short buttons = 0;
+    unsigned short previous = 0;
+
+    int gain = 16384;
 
     init_n64();
 
-    // Generate sine
-    #define SAMPLE_RATE 48000
-    #define FREQUENCY1 375
-    #define FREQUENCY2 (375 * 1.5)
-    // #define M_PI 3.1415926535
+    generate(gain);
 
-    // Generate 1 second of samples. This *will* make a click every 1 full second, but at least it's known.
-    for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
-        double time = (double)i / SAMPLE_RATE;
-        int16_t sample1 = (int16_t)(16384.0 * sinf(2.0 * M_PI * FREQUENCY1 * time));
-        int16_t sample2 = (int16_t)(16384.0 * sinf(2.0 * M_PI * FREQUENCY2 * time));
-
-        audio_buffer_a[i].channels[0] = sample1;
-        audio_buffer_a[i].channels[1] = sample2;
-    }
 
     audio_init(SAMPLE_RATE, 4);
     int offset = 0;
@@ -189,6 +199,20 @@ int main(void)
             frames = 0;
         }
 
+        if (DU_BUTTON(buttons ^ previous) && !DU_BUTTON(buttons)) {
+            if (gain < 16384) {
+                gain *= 2;
+                generate(gain);
+            }
+        }
+
+        if (DD_BUTTON(buttons ^ previous) && !DD_BUTTON(buttons)) {
+            if (gain > 1) {
+                gain /= 2;
+                generate(gain);
+            }
+        }
+
         // Gray background
         bgcolor = graphics_make_color(0x40, 0x40, 0x40, 0xFF);
         graphics_fill_screen(_dc, bgcolor);
@@ -208,6 +232,8 @@ int main(void)
         sprintf(temp, "audio buf: %d", audio_get_buffer_length());
         printText(_dc, temp, WIDTH/16 - 3, 11);
 
+        sprintf(temp, "audio gain: %d", gain);
+        printText(_dc, temp, WIDTH/16 - 3, 12);
 
         // To make it extra clear if the counter is running or not,
         // show a green bar when counting, and a red when stopped.
@@ -232,6 +258,9 @@ int main(void)
             }
             audio_write_end();
         }
+
+
+        previous = buttons;
     }
 
     return 0;
