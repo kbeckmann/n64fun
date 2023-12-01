@@ -149,7 +149,7 @@ void generate(int gain)
     #define FREQUENCY2 (375 * 1.5)
     // #define M_PI 3.1415926535
 
-    float gainf = (float) gain;
+    float gainf = 32768.0f / gain;
 
     // Generate 1 second of samples. This *will* make a click every 1 full second, but at least it's known.
     for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
@@ -162,6 +162,36 @@ void generate(int gain)
     }
 }
 
+void generate_saw(int gain)
+{
+    // Generate sine
+    #define SAMPLE_RATE 48000
+    #define FREQUENCY1 375
+    #define FREQUENCY2 (375 * 1.5)
+    // #define M_PI 3.1415926535
+
+    float gainf = (float) gain;
+
+    // Generate 1 second of samples. This *will* make a click every 1 full second, but at least it's known.
+    for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
+        double time = (double)i / SAMPLE_RATE;
+        int16_t sample1 = ((i * 1024) % 65536) - 32768;
+        int16_t sample2 = ((i * 1536) % 65536) - 32768;
+
+        audio_buffer_a[i].channels[0] = sample1 / gain;
+        audio_buffer_a[i].channels[1] = sample2 / gain;
+    }
+}
+
+
+void generate_pattern(void)
+{
+    for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
+        audio_buffer_a[i].channels[0] = 0x1234;
+        audio_buffer_a[i].channels[1] = 0x5678;
+    }
+}
+
 /* main code entry point */
 int main(void)
 {
@@ -170,11 +200,12 @@ int main(void)
     unsigned short buttons = 0;
     unsigned short previous = 0;
 
-    int gain = 16384;
+    int gain = 1;
 
     init_n64();
 
-    generate(gain);
+    // generate(gain);
+    generate_saw(gain);
 
 
     audio_init(SAMPLE_RATE, 4);
@@ -202,15 +233,23 @@ int main(void)
         if (DU_BUTTON(buttons ^ previous) && !DU_BUTTON(buttons)) {
             if (gain < 16384) {
                 gain *= 2;
-                generate(gain);
+                generate_saw(gain);
             }
         }
 
         if (DD_BUTTON(buttons ^ previous) && !DD_BUTTON(buttons)) {
             if (gain > 1) {
                 gain /= 2;
-                generate(gain);
+                generate_saw(gain);
             }
+        }
+
+        if (DR_BUTTON(buttons ^ previous) && !DR_BUTTON(buttons)) {
+            generate_pattern();
+        }
+
+        if (DL_BUTTON(buttons ^ previous) && !DL_BUTTON(buttons)) {
+            generate(gain);
         }
 
         // Gray background
@@ -232,7 +271,7 @@ int main(void)
         sprintf(temp, "audio buf: %d", audio_get_buffer_length());
         printText(_dc, temp, WIDTH/16 - 3, 11);
 
-        sprintf(temp, "audio gain: %d", gain);
+        sprintf(temp, "audio gain: 1/%d", gain);
         printText(_dc, temp, WIDTH/16 - 3, 12);
 
         // To make it extra clear if the counter is running or not,
