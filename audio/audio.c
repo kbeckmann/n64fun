@@ -52,10 +52,13 @@
 
 #define WIDTH 320
 
+int SAMPLE_RATE = 48000;
+
 unsigned short gButtons = 0;
 struct controller_data gKeys;
 
 volatile int gTicks;                    /* incremented every vblank */
+int sine_or_saw;
 
 /* input - do getButtons() first, then getAnalogX() and/or getAnalogY() */
 unsigned short getButtons(int pad)
@@ -133,7 +136,7 @@ void init_n64(void)
     controller_init();
 }
 
-#define AUDIO_BUFFER_SIZE (48000)
+#define AUDIO_BUFFER_SIZE (48000 / 10)
 
 typedef struct audio_sample {
     int16_t channels[2];
@@ -141,17 +144,15 @@ typedef struct audio_sample {
 
 audio_sample_t audio_buffer_a[AUDIO_BUFFER_SIZE];
 
-void generate(int gain)
+void generate_sine(int gain)
 {
     // Generate sine
-    #define SAMPLE_RATE 48000
-    #define FREQUENCY1 375
-    #define FREQUENCY2 (375 * 1.5)
-    // #define M_PI 3.1415926535
+    #define FREQUENCY1 320
+    #define FREQUENCY2 (320 * 2)
 
     float gainf = 32768.0f / gain;
 
-    // Generate 1 second of samples. This *will* make a click every 1 full second, but at least it's known.
+    // Generate 1 buffer of samples. This wraps nicely at 32000 and 48000 Hz
     for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
         double time = (double)i / SAMPLE_RATE;
         int16_t sample1 = (int16_t)(gainf * sinf(2.0 * M_PI * FREQUENCY1 * time));
@@ -164,31 +165,37 @@ void generate(int gain)
 
 void generate_saw(int gain)
 {
-    // Generate sine
-    #define SAMPLE_RATE 48000
-    #define FREQUENCY1 375
-    #define FREQUENCY2 (375 * 1.5)
-    // #define M_PI 3.1415926535
+    // Generate sawtooth
+    #define FREQUENCY1 320
+    #define FREQUENCY2 (320 * 2)
 
-    float gainf = (float) gain;
+    #define C1 (SAMPLE_RATE / FREQUENCY1)
+    #define C2 (SAMPLE_RATE / FREQUENCY2)
 
-    // Generate 1 second of samples. This *will* make a click every 1 full second, but at least it's known.
+    // Generate 1 buffer of samples. This wraps nicely at 32000 and 48000 Hz
     for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
-        double time = (double)i / SAMPLE_RATE;
-        int16_t sample1 = ((i * 1024) % 65536) - 32768;
-        int16_t sample2 = ((i * 1536) % 65536) - 32768;
+        int16_t sample1 = (int) ((65536.0f / C1) * ((float) (i % C1)));
+        int16_t sample2 = (int) ((65536.0f / C2) * ((float) (i % C2)));
 
         audio_buffer_a[i].channels[0] = sample1 / gain;
         audio_buffer_a[i].channels[1] = sample2 / gain;
     }
 }
 
+void generate(int gain)
+{
+    if (sine_or_saw) {
+        generate_saw(gain);
+    } else {
+        generate_sine(gain);
+    }
+}
 
 void generate_pattern(void)
 {
     for (int i = 0; i < AUDIO_BUFFER_SIZE; i++) {
-        audio_buffer_a[i].channels[0] = 0x1234;
-        audio_buffer_a[i].channels[1] = 0x5678;
+        audio_buffer_a[i].channels[0] = -2;
+        audio_buffer_a[i].channels[1] = -16383;
     }
 }
 
@@ -204,9 +211,7 @@ int main(void)
 
     init_n64();
 
-    // generate(gain);
-    generate_saw(gain);
-
+    generate(gain);
 
     audio_init(SAMPLE_RATE, 4);
     int offset = 0;
@@ -231,16 +236,16 @@ int main(void)
         }
 
         if (DU_BUTTON(buttons ^ previous) && !DU_BUTTON(buttons)) {
-            if (gain < 16384) {
-                gain *= 2;
-                generate_saw(gain);
+            if (gain > 1) {
+                gain /= 2;
+                generate(gain);
             }
         }
 
         if (DD_BUTTON(buttons ^ previous) && !DD_BUTTON(buttons)) {
-            if (gain > 1) {
-                gain /= 2;
-                generate_saw(gain);
+            if (gain < 16384) {
+                gain *= 2;
+                generate(gain);
             }
         }
 
@@ -249,8 +254,25 @@ int main(void)
         }
 
         if (DL_BUTTON(buttons ^ previous) && !DL_BUTTON(buttons)) {
+            sine_or_saw = !sine_or_saw;
             generate(gain);
         }
+
+        if (A_BUTTON(buttons ^ previous) && !A_BUTTON(buttons)) {
+            SAMPLE_RATE = 48000;
+            audio_init(SAMPLE_RATE, 4);
+        }
+
+        if (B_BUTTON(buttons ^ previous) && !B_BUTTON(buttons)) {
+            SAMPLE_RATE = 32000;
+            audio_init(SAMPLE_RATE, 4);
+        }
+
+        if (Z_BUTTON(buttons ^ previous) && !Z_BUTTON(buttons)) {
+            SAMPLE_RATE = 31123;
+            audio_init(SAMPLE_RATE, 4);
+        }
+
 
         // Gray background
         bgcolor = graphics_make_color(0x40, 0x40, 0x40, 0xFF);
@@ -260,19 +282,29 @@ int main(void)
         fgcolor = graphics_make_color(0xFF, 0xFF, 0xFF, 0xFF);
         graphics_set_color(fgcolor, bgcolor);
 
-        printText(_dc, "Audio Test", WIDTH/16 - 10, 3);
+        printText(_dc, "Audio Test", 5, 3);
+        printText(_dc, "DU=Vol+", 5, 5);
+        printText(_dc, "DD=Vol-", 5, 6);
+        printText(_dc, "DL=sine/saw", 5, 7);
+        printText(_dc, "DR=const", 5, 8);
+        printText(_dc, "A=48000Hz", 5, 9);
+        printText(_dc, "B=32000Hz", 5, 10);
+        printText(_dc, "Z=31123Hz", 5, 11);
 
         sprintf(temp, "gTicks: %d", gTicks);
-        printText(_dc, temp, WIDTH/16 - 3, 7);
+        printText(_dc, temp, 5, 13);
 
         sprintf(temp, "frames: %d", frames);
-        printText(_dc, temp, WIDTH/16 - 3, 9);
+        printText(_dc, temp, 5, 14);
 
         sprintf(temp, "audio buf: %d", audio_get_buffer_length());
-        printText(_dc, temp, WIDTH/16 - 3, 11);
+        printText(_dc, temp, 5, 15);
 
         sprintf(temp, "audio gain: 1/%d", gain);
-        printText(_dc, temp, WIDTH/16 - 3, 12);
+        printText(_dc, temp, 5, 16);
+
+        sprintf(temp, "sample rate: %d Hz", SAMPLE_RATE);
+        printText(_dc, temp, 5, 17);
 
         // To make it extra clear if the counter is running or not,
         // show a green bar when counting, and a red when stopped.
@@ -288,13 +320,20 @@ int main(void)
 
 
         if (audio_can_write()) {
-            short* p = audio_write_begin();
-            int samples = audio_get_buffer_length();
-            memcpy(p, audio_buffer_a + offset, samples * 4);
-            offset += samples;
-            if (offset + samples >= AUDIO_BUFFER_SIZE) {
-                offset = 0;
+            uint8_t* p = (uint8_t *) audio_write_begin();
+            int buffer_length = audio_get_buffer_length();
+
+            if (offset + buffer_length > AUDIO_BUFFER_SIZE) {
+                int len1 = AUDIO_BUFFER_SIZE - offset;
+                int len2 = buffer_length - len1;
+                memcpy(p, audio_buffer_a + offset, len1 * 4);
+                memcpy(p + len1 * 4, audio_buffer_a, len2 * 4);
+                offset = len2;
+            } else {
+                memcpy(p, audio_buffer_a + offset, buffer_length * 4);
+                offset += buffer_length;
             }
+
             audio_write_end();
         }
 
