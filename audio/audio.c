@@ -52,7 +52,7 @@
 
 #define WIDTH 320
 
-int SAMPLE_RATE = 48000;
+int SAMPLE_RATE = 32000;
 
 unsigned short gButtons = 0;
 struct controller_data gKeys;
@@ -264,11 +264,16 @@ int main(void)
         }
 
         if (B_BUTTON(buttons ^ previous) && !B_BUTTON(buttons)) {
-            SAMPLE_RATE = 32000;
+            SAMPLE_RATE = 44100;
             audio_init(SAMPLE_RATE, 4);
         }
 
         if (Z_BUTTON(buttons ^ previous) && !Z_BUTTON(buttons)) {
+            SAMPLE_RATE = 32000;
+            audio_init(SAMPLE_RATE, 4);
+        }
+
+        if (TR_BUTTON(buttons ^ previous) && !TR_BUTTON(buttons)) {
             SAMPLE_RATE = 31123;
             audio_init(SAMPLE_RATE, 4);
         }
@@ -287,24 +292,25 @@ int main(void)
         printText(_dc, "DD=Vol-", 5, 6);
         printText(_dc, "DL=sine/saw", 5, 7);
         printText(_dc, "DR=const", 5, 8);
-        printText(_dc, "A=48000Hz", 5, 9);
-        printText(_dc, "B=32000Hz", 5, 10);
-        printText(_dc, "Z=31123Hz", 5, 11);
+        printText(_dc, " A=48000Hz", 5, 9);
+        printText(_dc, " B=44100Hz", 5, 10);
+        printText(_dc, " Z=32000Hz", 5, 11);
+        printText(_dc, "TR=31123Hz", 5, 12);
 
         sprintf(temp, "gTicks: %d", gTicks);
-        printText(_dc, temp, 5, 13);
-
-        sprintf(temp, "frames: %d", frames);
         printText(_dc, temp, 5, 14);
 
-        sprintf(temp, "audio buf: %d", audio_get_buffer_length());
+        sprintf(temp, "frames: %d", frames);
         printText(_dc, temp, 5, 15);
 
-        sprintf(temp, "audio gain: 1/%d", gain);
+        sprintf(temp, "audio buf: %d", audio_get_buffer_length());
         printText(_dc, temp, 5, 16);
 
-        sprintf(temp, "sample rate: %d Hz", SAMPLE_RATE);
+        sprintf(temp, "audio gain: 1/%d", gain);
         printText(_dc, temp, 5, 17);
+
+        sprintf(temp, "sample rate: %d Hz", SAMPLE_RATE);
+        printText(_dc, temp, 5, 18);
 
         // To make it extra clear if the counter is running or not,
         // show a green bar when counting, and a red when stopped.
